@@ -1,26 +1,82 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { AppLayout } from "@/components/layout";
+
+// Pages
 import NotFound from "@/pages/not-found";
+import Login from "@/pages/auth/login";
+import Register from "@/pages/auth/register";
+import Dashboard from "@/pages/dashboard/index";
+import PDV from "@/pages/pdv/index";
+import Scan from "@/pages/scan/index";
+import Produtos from "@/pages/produtos/index";
+import Estoque from "@/pages/estoque/index";
+import Vendas from "@/pages/vendas/index";
+import Servicos from "@/pages/servicos/index";
+import Tecnicos from "@/pages/tecnicos/index";
+import Assinatura from "@/pages/assinatura/index";
+import AssinaturaSucesso from "@/pages/assinatura/sucesso";
+import AssinaturaCancelado from "@/pages/assinatura/cancelado";
+import Configuracoes from "@/pages/configuracoes/index";
+import Admin from "@/pages/admin/index";
 
 const queryClient = new QueryClient();
 
-function Home() {
+function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: any) {
+  const { token, isLoading, user, assinaturaStatus } = useAuth();
+  
+  if (isLoading) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
+  
+  if (!token || !user) {
+    return <Redirect to="/login" />;
+  }
+
+  if (adminOnly && user.role !== "super_admin") {
+    return <Redirect to="/" />;
+  }
+
+  if (user.role !== "super_admin" && assinaturaStatus !== "trial" && assinaturaStatus !== "ativa" && rest.path !== "/assinatura") {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
+          <h2 className="text-2xl font-bold">Assinatura Vencida</h2>
+          <p>Sua assinatura está inativa. Por favor, regularize seu pagamento para continuar usando o sistema.</p>
+          <a href="/assinatura" className="px-4 py-2 bg-primary text-primary-foreground rounded-md">Ir para Assinatura</a>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Replit Agent is building...</h1>
-        <p className="mt-2 text-sm text-gray-600">Your app will appear here once it's ready.</p>
-      </div>
-    </div>
+    <AppLayout>
+      <Component {...rest} />
+    </AppLayout>
   );
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
+      <Route path="/registro" component={Register} />
+      <Route path="/scan/:sessaoId" component={Scan} />
+      <Route path="/assinatura/sucesso" component={AssinaturaSucesso} />
+      <Route path="/assinatura/cancelado" component={AssinaturaCancelado} />
+      
+      <Route path="/">{(params) => <ProtectedRoute component={Dashboard} path="/" {...params} />}</Route>
+      <Route path="/pdv">{(params) => <ProtectedRoute component={PDV} path="/pdv" {...params} />}</Route>
+      <Route path="/produtos">{(params) => <ProtectedRoute component={Produtos} path="/produtos" {...params} />}</Route>
+      <Route path="/estoque">{(params) => <ProtectedRoute component={Estoque} path="/estoque" {...params} />}</Route>
+      <Route path="/vendas">{(params) => <ProtectedRoute component={Vendas} path="/vendas" {...params} />}</Route>
+      <Route path="/servicos">{(params) => <ProtectedRoute component={Servicos} path="/servicos" {...params} />}</Route>
+      <Route path="/tecnicos">{(params) => <ProtectedRoute component={Tecnicos} path="/tecnicos" {...params} />}</Route>
+      <Route path="/assinatura">{(params) => <ProtectedRoute component={Assinatura} path="/assinatura" {...params} />}</Route>
+      <Route path="/configuracoes">{(params) => <ProtectedRoute component={Configuracoes} path="/configuracoes" {...params} />}</Route>
+      <Route path="/admin">{(params) => <ProtectedRoute component={Admin} path="/admin" adminOnly={true} {...params} />}</Route>
+      
       <Route component={NotFound} />
     </Switch>
   );
@@ -31,7 +87,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+          <AuthProvider>
+            <Router />
+          </AuthProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

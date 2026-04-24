@@ -1,0 +1,191 @@
+import { db, empresas, usuarios, planos, assinaturas } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { hashPassword, signToken, SUPER_ADMIN_EMAIL } from "../lib/auth";
+import { stripe } from "../lib/stripe";
+import { logger } from "../lib/logger";
+
+const TRIAL_DAYS = Number(process.env["STRIPE_TRIAL_DAYS"] ?? "7");
+
+export async function ensureSuperAdmin(): Promise<void> {
+  const [existing] = await db
+    .select()
+    .from(usuarios)
+    .where(eq(usuarios.email, SUPER_ADMIN_EMAIL))
+    .limit(1);
+  if (existing) {
+    if (existing.role !== "super_admin") {
+      await db
+        .update(usuarios)
+        .set({ role: "super_admin", empresaId: null, ativo: true })
+        .where(eq(usuarios.id, existing.id));
+    }
+    return;
+  }
+  const senhaHash = await hashPassword("admin123");
+  await db.insert(usuarios).values({
+    email: SUPER_ADMIN_EMAIL,
+    nome: "Antonio Serejo",
+    senhaHash,
+    role: "super_admin",
+    ativo: true,
+    empresaId: null,
+  });
+  logger.info({ email: SUPER_ADMIN_EMAIL }, "super_admin criado (senha padrão: admin123)");
+}
+
+export async function ensureSeedPlanos(): Promise<void> {
+  const existentes = await db.select().from(planos);
+  if (existentes.length > 0) return;
+  await db.insert(planos).values([
+    {
+      nome: "Starter",
+      descricao: "Para lojas começando — 1 usuário, controle de estoque e PDV",
+      preco: "49.90",
+      intervalo: "mes",
+      recursos: JSON.stringify([
+        "1 usuário",
+        "Estoque ilimitado",
+        "PDV completo",
+        "Scanner via celular",
+      ]),
+      ativo: true,
+    },
+    {
+      nome: "Profissional",
+      descricao: "Para oficinas em crescimento — múltiplos usuários e técnicos",
+      preco: "99.90",
+      intervalo: "mes",
+      recursos: JSON.stringify([
+        "Usuários ilimitados",
+        "Gestão de técnicos e serviços",
+        "Dashboard de lucratividade",
+        "Scanner via celular",
+        "Suporte prioritário",
+      ]),
+      ativo: true,
+    },
+    {
+      nome: "Premium",
+      descricao: "Para redes — relatórios avançados e múltiplas filiais",
+      preco: "199.90",
+      intervalo: "mes",
+      recursos: JSON.stringify([
+        "Tudo do Profissional",
+        "Múltiplas filiais",
+        "Relatórios avançados",
+        "API completa",
+        "Suporte 24/7",
+      ]),
+      ativo: true,
+    },
+  ]);
+  logger.info("planos seed criados");
+}
+
+export async function syncStripePlanos(): Promise<void> {
+  if (!stripe) return;
+  const lista = await db.select().from(planos);
+  for (const plano of lista) {
+    if (plano.stripePriceId) continue;
+    try {
+      const product = await stripe.products.create({
+        name: `TecnoFix ${plano.nome}`,
+        description: plano.descricao ?? undefined,
+      });
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: Math.round(Number(plano.preco) * 100),
+        currency: "brl",
+        recurring: { interval: "month" },
+      });
+      await db
+        .update(planos)
+        .set({ stripeProductId: product.id, stripePriceId: price.id })
+        .where(eq(planos.id, plano.id));
+      logger.info({ planoId: plano.id, priceId: price.id }, "stripe price criado");
+    } catch (err) {
+      logger.error({ err, planoId: plano.id }, "falha ao sincronizar plano com stripe");
+    }
+  }
+}
+
+export async function registerEmpresa(input: {
+  empresaNome: string;
+  nome: string;
+  email: string;
+  senha: string;
+}) {
+  const [existing] = await db
+    .select()
+    .from(usuarios)
+    .where(eq(usuarios.email, input.email))
+    .limit(1);
+  if (existing) {
+    throw new Error("EMAIL_JA_USADO");
+  }
+
+  const trialFim = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+
+  let stripeCustomerId: string | null = null;
+  if (stripe) {
+    try {
+      const customer = await stripe.customers.create({
+        name: input.empresaNome,
+        email: input.email,
+        metadata: { empresaNome: input.empresaNome },
+      });
+      stripeCustomerId = customer.id;
+    } catch (err) {
+      logger.error({ err }, "falha ao criar customer no stripe");
+    }
+  }
+
+  const [empresa] = await db
+    .insert(empresas)
+    .values({
+      nome: input.empresaNome,
+      ativa: true,
+      bloqueada: false,
+      trialFim,
+      stripeCustomerId,
+    })
+    .returning();
+
+  if (!empresa) throw new Error("FALHA_CRIAR_EMPRESA");
+
+  const senhaHash = await hashPassword(input.senha);
+  const role = input.email === SUPER_ADMIN_EMAIL ? "super_admin" : "admin";
+  const [user] = await db
+    .insert(usuarios)
+    .values({
+      empresaId: role === "super_admin" ? null : empresa.id,
+      nome: input.nome,
+      email: input.email,
+      senhaHash,
+      role,
+      ativo: true,
+    })
+    .returning();
+
+  if (!user) throw new Error("FALHA_CRIAR_USUARIO");
+
+  await db.insert(assinaturas).values({
+    empresaId: empresa.id,
+    status: "trial",
+    inicio: new Date(),
+    proximoVencimento: trialFim,
+  });
+
+  const token = signToken({ userId: user.id, empresaId: user.empresaId, role: user.role });
+  return { token, user, empresa };
+}
+
+export async function authenticate(email: string, senha: string) {
+  const [user] = await db.select().from(usuarios).where(eq(usuarios.email, email)).limit(1);
+  if (!user || !user.ativo) return null;
+  const { verifyPassword } = await import("../lib/auth");
+  const ok = await verifyPassword(senha, user.senhaHash);
+  if (!ok) return null;
+  const token = signToken({ userId: user.id, empresaId: user.empresaId, role: user.role });
+  return { token, user };
+}

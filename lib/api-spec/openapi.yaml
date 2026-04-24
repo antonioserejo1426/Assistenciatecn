@@ -3,34 +3,932 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: TecnoFix SaaS - Assistência Técnica Multi-Empresa
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: empresa
+  - name: planos
+  - name: assinatura
+  - name: produtos
+  - name: estoque
+  - name: vendas
+  - name: tecnicos
+  - name: servicos
+  - name: dashboard
+  - name: scanner
+  - name: admin
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Cadastrar empresa + usuário admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+
+  /auth/me:
+    get:
+      operationId: me
+      tags: [auth]
+      summary: Usuário autenticado
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MeResponse" }
+
+  /empresa:
+    get:
+      operationId: getEmpresa
+      tags: [empresa]
+      summary: Dados da empresa atual
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Empresa" }
+    patch:
+      operationId: updateEmpresa
+      tags: [empresa]
+      summary: Atualizar empresa (nome, logo)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateEmpresaBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Empresa" }
+
+  /planos:
+    get:
+      operationId: listPlanos
+      tags: [planos]
+      summary: Listar planos
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: array
+                items: { $ref: "#/components/schemas/Plano" }
+
+  /assinatura:
+    get:
+      operationId: getAssinatura
+      tags: [assinatura]
+      summary: Assinatura atual
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Assinatura" }
+
+  /assinatura/checkout:
+    post:
+      operationId: createCheckout
+      tags: [assinatura]
+      summary: Criar checkout Stripe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutResponse" }
+
+  /assinatura/portal:
+    post:
+      operationId: createPortal
+      tags: [assinatura]
+      summary: Portal de gerenciamento Stripe
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PortalResponse" }
+
+  /produtos:
+    get:
+      operationId: listProdutos
+      tags: [produtos]
+      summary: Listar produtos
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Produto" }
+    post:
+      operationId: createProduto
+      tags: [produtos]
+      summary: Criar produto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateProdutoBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Produto" }
+
+  /produtos/{id}:
+    get:
+      operationId: getProduto
+      tags: [produtos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Produto" }
+    patch:
+      operationId: updateProduto
+      tags: [produtos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateProdutoBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Produto" }
+    delete:
+      operationId: deleteProduto
+      tags: [produtos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /produtos/codigo/{codigo}:
+    get:
+      operationId: getProdutoByCodigo
+      tags: [produtos]
+      parameters:
+        - in: path
+          name: codigo
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProdutoLookup" }
+
+  /estoque/movimentacoes:
+    get:
+      operationId: listMovimentacoes
+      tags: [estoque]
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Movimentacao" }
+    post:
+      operationId: createMovimentacao
+      tags: [estoque]
+      summary: Entrada/saída de estoque
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateMovimentacaoBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Movimentacao" }
+
+  /vendas:
+    get:
+      operationId: listVendas
+      tags: [vendas]
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Venda" }
+    post:
+      operationId: createVenda
+      tags: [vendas]
+      summary: Finalizar venda PDV
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateVendaBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Venda" }
+
+  /vendas/{id}:
+    get:
+      operationId: getVenda
+      tags: [vendas]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VendaDetalhada" }
+
+  /tecnicos:
+    get:
+      operationId: listTecnicos
+      tags: [tecnicos]
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Tecnico" }
+    post:
+      operationId: createTecnico
+      tags: [tecnicos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateTecnicoBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tecnico" }
+
+  /tecnicos/{id}:
+    delete:
+      operationId: deleteTecnico
+      tags: [tecnicos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /servicos:
+    get:
+      operationId: listServicos
+      tags: [servicos]
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Servico" }
+    post:
+      operationId: createServico
+      tags: [servicos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateServicoBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Servico" }
+
+  /servicos/{id}:
+    patch:
+      operationId: updateServico
+      tags: [servicos]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateServicoBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Servico" }
+
+  /dashboard/resumo:
+    get:
+      operationId: dashboardResumo
+      tags: [dashboard]
+      summary: Resumo financeiro/lucro
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardResumo" }
+
+  /dashboard/top-produtos:
+    get:
+      operationId: dashboardTopProdutos
+      tags: [dashboard]
+      summary: Produtos mais vendidos
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TopProduto" }
+
+  /dashboard/vendas-recentes:
+    get:
+      operationId: dashboardVendasRecentes
+      tags: [dashboard]
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Venda" }
+
+  /scanner/sessao:
+    post:
+      operationId: createScannerSessao
+      tags: [scanner]
+      summary: Cria sessão para parear celular ao PC
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScannerSessao" }
+
+  /admin/empresas:
+    get:
+      operationId: adminListEmpresas
+      tags: [admin]
+      summary: Listar empresas (super_admin)
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/EmpresaAdmin" }
+
+  /admin/empresas/{id}/bloqueio:
+    post:
+      operationId: adminToggleBloqueioEmpresa
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ToggleBloqueioBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /admin/empresas/{id}/trial:
+    post:
+      operationId: adminEstenderTrial
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EstenderTrialBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /admin/empresas/{id}/ativar-assinatura:
+    post:
+      operationId: adminAtivarAssinatura
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AtivarAssinaturaBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /admin/usuarios/{id}/bloqueio:
+    post:
+      operationId: adminToggleBloqueioUsuario
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ToggleBloqueioBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /admin/resumo:
+    get:
+      operationId: adminResumo
+      tags: [admin]
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminResumo" }
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
+    OkResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+      required: [ok]
 
+    RegisterBody:
+      type: object
+      required: [empresaNome, nome, email, senha]
+      properties:
+        empresaNome: { type: string }
+        nome: { type: string }
+        email: { type: string }
+        senha: { type: string }
+    LoginBody:
+      type: object
+      required: [email, senha]
+      properties:
+        email: { type: string }
+        senha: { type: string }
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+    User:
+      type: object
+      required: [id, nome, email, role]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        email: { type: string }
+        role: { type: string }
+        empresaId: { type: integer, nullable: true }
+        logoUrl: { type: string, nullable: true }
+    MeResponse:
+      type: object
+      required: [user, assinaturaStatus]
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        empresa:
+          allOf: [{ $ref: "#/components/schemas/Empresa" }]
+          nullable: true
+        assinaturaStatus: { type: string }
+
+    Empresa:
+      type: object
+      required: [id, nome]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        logoUrl: { type: string, nullable: true }
+        ativa: { type: boolean }
+        trialFim: { type: string, nullable: true }
+        stripeCustomerId: { type: string, nullable: true }
+    UpdateEmpresaBody:
+      type: object
+      properties:
+        nome: { type: string }
+        logoUrl: { type: string, nullable: true }
+
+    Plano:
+      type: object
+      required: [id, nome, preco, intervalo]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        descricao: { type: string, nullable: true }
+        preco: { type: number }
+        intervalo: { type: string }
+        stripePriceId: { type: string, nullable: true }
+        recursos:
+          type: array
+          items: { type: string }
+
+    Assinatura:
+      type: object
+      required: [status]
+      properties:
+        id: { type: integer, nullable: true }
+        status: { type: string }
+        planoId: { type: integer, nullable: true }
+        plano:
+          allOf: [{ $ref: "#/components/schemas/Plano" }]
+          nullable: true
+        trialFim: { type: string, nullable: true }
+        proximoVencimento: { type: string, nullable: true }
+        stripeSubscriptionId: { type: string, nullable: true }
+    CheckoutBody:
+      type: object
+      required: [planoId]
+      properties:
+        planoId: { type: integer }
+    CheckoutResponse:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+    PortalResponse:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+
+    Produto:
+      type: object
+      required: [id, nome, preco, custo, estoque]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        codigoBarras: { type: string, nullable: true }
+        preco: { type: number }
+        custo: { type: number }
+        estoque: { type: integer }
+        descricao: { type: string, nullable: true }
+        imagemUrl: { type: string, nullable: true }
+    ProdutoLookup:
+      type: object
+      required: [encontrado]
+      properties:
+        encontrado: { type: boolean }
+        produto:
+          allOf: [{ $ref: "#/components/schemas/Produto" }]
+          nullable: true
+    CreateProdutoBody:
+      type: object
+      required: [nome, preco, custo, estoque]
+      properties:
+        nome: { type: string }
+        codigoBarras: { type: string, nullable: true }
+        preco: { type: number }
+        custo: { type: number }
+        estoque: { type: integer }
+        descricao: { type: string, nullable: true }
+        imagemUrl: { type: string, nullable: true }
+    UpdateProdutoBody:
+      type: object
+      properties:
+        nome: { type: string }
+        codigoBarras: { type: string, nullable: true }
+        preco: { type: number }
+        custo: { type: number }
+        estoque: { type: integer }
+        descricao: { type: string, nullable: true }
+        imagemUrl: { type: string, nullable: true }
+
+    Movimentacao:
+      type: object
+      required: [id, produtoId, tipo, quantidade, criadoEm]
+      properties:
+        id: { type: integer }
+        produtoId: { type: integer }
+        produtoNome: { type: string, nullable: true }
+        tipo: { type: string }
+        quantidade: { type: integer }
+        motivo: { type: string, nullable: true }
+        criadoEm: { type: string }
+    CreateMovimentacaoBody:
+      type: object
+      required: [produtoId, tipo, quantidade]
+      properties:
+        produtoId: { type: integer }
+        tipo: { type: string }
+        quantidade: { type: integer }
+        motivo: { type: string, nullable: true }
+
+    Venda:
+      type: object
+      required: [id, total, criadoEm]
+      properties:
+        id: { type: integer }
+        total: { type: number }
+        custo: { type: number }
+        lucro: { type: number }
+        cliente: { type: string, nullable: true }
+        formaPagamento: { type: string, nullable: true }
+        criadoEm: { type: string }
+        itensCount: { type: integer }
+    VendaDetalhada:
+      allOf:
+        - $ref: "#/components/schemas/Venda"
+        - type: object
+          properties:
+            itens:
+              type: array
+              items: { $ref: "#/components/schemas/VendaItem" }
+    VendaItem:
+      type: object
+      required: [id, produtoId, quantidade, precoUnitario]
+      properties:
+        id: { type: integer }
+        produtoId: { type: integer }
+        produtoNome: { type: string, nullable: true }
+        quantidade: { type: integer }
+        precoUnitario: { type: number }
+        custoUnitario: { type: number }
+    CreateVendaBody:
+      type: object
+      required: [itens]
+      properties:
+        cliente: { type: string, nullable: true }
+        formaPagamento: { type: string, nullable: true }
+        itens:
+          type: array
+          items:
+            type: object
+            required: [produtoId, quantidade]
+            properties:
+              produtoId: { type: integer }
+              quantidade: { type: integer }
+              precoUnitario: { type: number, nullable: true }
+
+    Tecnico:
+      type: object
+      required: [id, nome]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        especialidade: { type: string, nullable: true }
+        telefone: { type: string, nullable: true }
+    CreateTecnicoBody:
+      type: object
+      required: [nome]
+      properties:
+        nome: { type: string }
+        especialidade: { type: string, nullable: true }
+        telefone: { type: string, nullable: true }
+
+    Servico:
+      type: object
+      required: [id, descricao, status, valor, criadoEm]
+      properties:
+        id: { type: integer }
+        descricao: { type: string }
+        cliente: { type: string, nullable: true }
+        clienteTelefone: { type: string, nullable: true }
+        aparelho: { type: string, nullable: true }
+        tecnicoId: { type: integer, nullable: true }
+        tecnicoNome: { type: string, nullable: true }
+        status: { type: string }
+        valor: { type: number }
+        custoPecas: { type: number }
+        criadoEm: { type: string }
+    CreateServicoBody:
+      type: object
+      required: [descricao, valor]
+      properties:
+        descricao: { type: string }
+        cliente: { type: string, nullable: true }
+        clienteTelefone: { type: string, nullable: true }
+        aparelho: { type: string, nullable: true }
+        tecnicoId: { type: integer, nullable: true }
+        valor: { type: number }
+        status: { type: string, nullable: true }
+    UpdateServicoBody:
+      type: object
+      properties:
+        descricao: { type: string }
+        cliente: { type: string, nullable: true }
+        clienteTelefone: { type: string, nullable: true }
+        aparelho: { type: string, nullable: true }
+        tecnicoId: { type: integer, nullable: true }
+        valor: { type: number }
+        status: { type: string }
+
+    DashboardResumo:
+      type: object
+      required: [faturamentoMes, lucroMes, vendasMes, ticketMedio, totalProdutos, estoqueBaixo, servicosAbertos]
+      properties:
+        faturamentoMes: { type: number }
+        lucroMes: { type: number }
+        vendasMes: { type: integer }
+        ticketMedio: { type: number }
+        totalProdutos: { type: integer }
+        estoqueBaixo: { type: integer }
+        servicosAbertos: { type: integer }
+        faturamentoSerie:
+          type: array
+          items:
+            type: object
+            required: [data, valor]
+            properties:
+              data: { type: string }
+              valor: { type: number }
+              lucro: { type: number }
+    TopProduto:
+      type: object
+      required: [produtoId, nome, quantidade, faturamento]
+      properties:
+        produtoId: { type: integer }
+        nome: { type: string }
+        quantidade: { type: integer }
+        faturamento: { type: number }
+
+    ScannerSessao:
+      type: object
+      required: [sessaoId, qrUrl]
+      properties:
+        sessaoId: { type: string }
+        qrUrl: { type: string }
+
+    EmpresaAdmin:
+      type: object
+      required: [id, nome, ativa, criadoEm]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        ativa: { type: boolean }
+        criadoEm: { type: string }
+        trialFim: { type: string, nullable: true }
+        assinaturaStatus: { type: string, nullable: true }
+        planoNome: { type: string, nullable: true }
+        usuariosCount: { type: integer }
+        adminEmail: { type: string, nullable: true }
+    ToggleBloqueioBody:
+      type: object
+      required: [bloqueado]
+      properties:
+        bloqueado: { type: boolean }
+    EstenderTrialBody:
+      type: object
+      required: [dias]
+      properties:
+        dias: { type: integer }
+    AtivarAssinaturaBody:
+      type: object
+      required: [planoId]
+      properties:
+        planoId: { type: integer }
+    AdminResumo:
+      type: object
+      required: [empresas, ativas, trial, vencidas, mrr]
+      properties:
+        empresas: { type: integer }
+        ativas: { type: integer }
+        trial: { type: integer }
+        vencidas: { type: integer }
+        mrr: { type: number }

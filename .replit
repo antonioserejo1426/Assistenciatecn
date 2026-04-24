@@ -26,3 +26,16 @@ externalPort = 8080
 [[ports]]
 localPort = 8081
 externalPort = 80
+
+[[ports]]
+localPort = 18833
+externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET = "a7d3ad68265becff8ddc4845fea7fc29e2eb7b365281c5c0e6970cc0734f9c85b4802c27304979c71b0739659836ce92"
+STRIPE_TRIAL_DAYS = "7"
+
+[nix]
+channel = "stable-25_05"
