@@ -59,8 +59,8 @@ export default function Register() {
         <img src={heroImage} alt="TecnoFix premium" className="h-full w-full object-contain" />
         <div className="absolute inset-0 bg-black/40" />
       </div>
-      <div className="relative flex min-h-screen items-center px-4 py-12 sm:px-6 lg:px-20 xl:px-28">
-        <div className="mx-auto w-full max-w-md lg:w-[26rem] rounded-3xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
+      <div className="relative flex min-h-screen flex-col justify-end px-4 pb-6 pt-6 sm:px-6 lg:justify-center lg:px-20 lg:pb-12 lg:pt-12 xl:px-28">
+        <div className="mx-auto w-full max-w-md lg:w-[26rem] rounded-3xl border border-white/20 bg-black/55 p-6 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-10">
             <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gold-gradient gold-ring">
               <Crown className="h-6 w-6 text-[hsl(222,47%,8%)]" />
