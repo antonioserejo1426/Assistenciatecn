@@ -8,6 +8,19 @@
 import * as zod from "zod";
 
 /**
+ * @summary Public system info (trial days, etc) — no auth required
+ */
+export const sistemaGetInfoResponseTrialDiasPadraoMin = 0;
+export const sistemaGetInfoResponseTrialDiasPadraoMax = 365;
+
+export const SistemaGetInfoResponse = zod.object({
+  trialDiasPadrao: zod
+    .number()
+    .min(sistemaGetInfoResponseTrialDiasPadraoMin)
+    .max(sistemaGetInfoResponseTrialDiasPadraoMax),
+});
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

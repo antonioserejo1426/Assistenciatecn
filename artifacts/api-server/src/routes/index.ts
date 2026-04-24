@@ -8,10 +8,12 @@ import tecnicosServicosRouter from "./tecnicosServicos";
 import scannerRouter from "./scanner";
 import assinaturaRouter from "./assinatura";
 import adminRouter from "./admin";
+import sistemaRouter from "./sistema";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(sistemaRouter);
 router.use(authRouter);
 router.use(assinaturaRouter);
 router.use(empresaRouter);

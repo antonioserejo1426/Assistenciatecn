@@ -21,7 +21,20 @@ tags:
   - name: dashboard
   - name: scanner
   - name: admin
+  - name: sistema
 paths:
+  /sistema/info:
+    get:
+      operationId: sistemaGetInfo
+      tags: [sistema]
+      summary: Public system info (trial days, etc) — no auth required
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SistemaPublicInfo" }
+
   /healthz:
     get:
       operationId: healthCheck
@@ -1073,5 +1086,10 @@ components:
         atualizadoEm: { type: string, format: date-time, nullable: true }
     UpdateSistemaConfigBody:
       type: object
+      properties:
+        trialDiasPadrao: { type: integer, minimum: 0, maximum: 365 }
+    SistemaPublicInfo:
+      type: object
+      required: [trialDiasPadrao]
       properties:
         trialDiasPadrao: { type: integer, minimum: 0, maximum: 365 }

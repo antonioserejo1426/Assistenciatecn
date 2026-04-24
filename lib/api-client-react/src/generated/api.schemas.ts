@@ -349,6 +349,14 @@ export interface UpdateSistemaConfigBody {
   trialDiasPadrao?: number;
 }
 
+export interface SistemaPublicInfo {
+  /**
+   * @minimum 0
+   * @maximum 365
+   */
+  trialDiasPadrao: number;
+}
+
 export type ListProdutosParams = {
   q?: string;
   limit?: number;

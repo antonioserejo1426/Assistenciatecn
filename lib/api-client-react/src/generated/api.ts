@@ -49,6 +49,7 @@ import type {
   ScannerSessao,
   Servico,
   SistemaConfig,
+  SistemaPublicInfo,
   Tecnico,
   ToggleBloqueioBody,
   TopProduto,
@@ -68,6 +69,81 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Public system info (trial days, etc) — no auth required
+ */
+export const getSistemaGetInfoUrl = () => {
+  return `/api/sistema/info`;
+};
+
+export const sistemaGetInfo = async (
+  options?: RequestInit,
+): Promise<SistemaPublicInfo> => {
+  return customFetch<SistemaPublicInfo>(getSistemaGetInfoUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getSistemaGetInfoQueryKey = () => {
+  return [`/api/sistema/info`] as const;
+};
+
+export const getSistemaGetInfoQueryOptions = <
+  TData = Awaited<ReturnType<typeof sistemaGetInfo>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof sistemaGetInfo>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSistemaGetInfoQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof sistemaGetInfo>>> = ({
+    signal,
+  }) => sistemaGetInfo({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof sistemaGetInfo>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type SistemaGetInfoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof sistemaGetInfo>>
+>;
+export type SistemaGetInfoQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Public system info (trial days, etc) — no auth required
+ */
+
+export function useSistemaGetInfo<
+  TData = Awaited<ReturnType<typeof sistemaGetInfo>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof sistemaGetInfo>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getSistemaGetInfoQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Health check

@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { useSistemaGetInfo } from "@workspace/api-client-react";
 import {
   Sidebar,
   SidebarContent,
@@ -32,6 +33,10 @@ import { Button } from "@/components/ui/button";
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, empresa, assinaturaStatus, logout } = useAuth();
   const [location] = useLocation();
+  const { data: sistemaInfo } = useSistemaGetInfo({
+    query: { staleTime: 0, refetchOnWindowFocus: true },
+  });
+  const trialDias = sistemaInfo?.trialDiasPadrao ?? 7;
 
   const isActive = (path: string) => location === path;
 
@@ -42,7 +47,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const statusLabel: Record<string, string> = {
     ativa: "Ativa",
-    trial: "Trial 7 dias",
+    trial: trialDias > 0 ? `Trial ${trialDias} ${trialDias === 1 ? "dia" : "dias"}` : "Trial",
     vencida: "Vencida",
     cancelada: "Cancelada",
   };

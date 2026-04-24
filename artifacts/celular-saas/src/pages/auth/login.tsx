@@ -2,7 +2,7 @@ import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useLogin } from "@workspace/api-client-react";
+import { useLogin, useSistemaGetInfo } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,10 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { setToken } = useAuth();
   const loginMutation = useLogin();
+  const { data: sistemaInfo } = useSistemaGetInfo({
+    query: { staleTime: 0, refetchOnWindowFocus: true },
+  });
+  const trialDias = sistemaInfo?.trialDiasPadrao ?? 7;
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -72,7 +76,7 @@ export default function Login() {
           <p className="mt-3 text-base leading-6 text-muted-foreground">
             Não tem uma conta?{" "}
             <Link href="/registro" className="font-semibold text-[hsl(28,85%,42%)] hover:underline underline-offset-4">
-              Teste grátis por 7 dias
+              {trialDias > 0 ? `Teste grátis por ${trialDias} ${trialDias === 1 ? "dia" : "dias"}` : "Crie sua conta"}
             </Link>
           </p>
 

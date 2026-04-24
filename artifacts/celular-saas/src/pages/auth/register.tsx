@@ -2,7 +2,7 @@ import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRegister } from "@workspace/api-client-react";
+import { useRegister, useSistemaGetInfo } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,17 +17,23 @@ const registerSchema = z.object({
   senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
-const beneficios = [
-  "7 dias grátis, sem cartão",
-  "Scanner via celular em tempo real",
-  "Dashboard de lucratividade",
-  "Suporte premium em português",
-];
-
 export default function Register() {
   const [, setLocation] = useLocation();
   const { setToken } = useAuth();
   const registerMutation = useRegister();
+  const { data: sistemaInfo } = useSistemaGetInfo({
+    query: { staleTime: 0, refetchOnWindowFocus: true },
+  });
+  const trialDias = sistemaInfo?.trialDiasPadrao ?? 7;
+  const trialLabel = trialDias > 0
+    ? `${trialDias} ${trialDias === 1 ? "dia" : "dias"} grátis, sem cartão`
+    : "Acesso premium imediato";
+  const beneficios = [
+    trialLabel,
+    "Scanner via celular em tempo real",
+    "Dashboard de lucratividade",
+    "Suporte premium em português",
+  ];
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -40,7 +46,11 @@ export default function Register() {
       {
         onSuccess: (data) => {
           setToken(data.token);
-          toast.success("Bem-vindo ao TecnoFix! Seus 7 dias premium começam agora.");
+          toast.success(
+            trialDias > 0
+              ? `Bem-vindo ao TecnoFix! Seus ${trialDias} ${trialDias === 1 ? "dia" : "dias"} premium começam agora.`
+              : "Bem-vindo ao TecnoFix!",
+          );
           setLocation("/");
         },
         onError: (error) => {
@@ -173,7 +183,11 @@ export default function Register() {
                   className="btn-luxe h-12 w-full rounded-xl text-base font-semibold tracking-wide"
                   disabled={registerMutation.isPending}
                 >
-                  {registerMutation.isPending ? "Criando sua conta..." : "Começar 7 dias premium"}
+                  {registerMutation.isPending
+                    ? "Criando sua conta..."
+                    : trialDias > 0
+                      ? `Começar ${trialDias} ${trialDias === 1 ? "dia" : "dias"} premium`
+                      : "Criar conta premium"}
                 </Button>
               </form>
             </Form>
