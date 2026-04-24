@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "TecnoFix - SaaS Assistência Técnica"
+version = "1.0.0"
+id = "artifacts/celular-saas"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18833
+
+[services.development]
+run = "pnpm --filter @workspace/celular-saas run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/celular-saas", "run", "build" ]
+publicDir = "artifacts/celular-saas/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18833"
+BASE_PATH = "/"

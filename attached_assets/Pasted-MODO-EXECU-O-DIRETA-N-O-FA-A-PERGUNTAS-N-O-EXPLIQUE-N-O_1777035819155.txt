@@ -1,0 +1,254 @@
+MODO EXECUÇÃO DIRETA:  
+NÃO FAÇA PERGUNTAS.  
+NÃO EXPLIQUE.  
+NÃO DESCREVA.  
+ENTREGUE TUDO PRONTO.
+
+Gerar um sistema SaaS completo, funcional, escalável e pronto para produção para assistência técnica de celulares.
+
+Sistema multiempresa com:
+
+- Controle de assinaturas com pagamento recorrente
+- Gestão de estoque
+- PDV completo
+- Scanner via celular em tempo real integrado ao PC
+- Dashboard de lucratividade
+
+Frontend: React + Tailwind  
+Backend: Node.js + Express  
+Banco: PostgreSQL  
+Tempo real: Socket.io  
+Auth: JWT + bcrypt  
+
+Arquitetura obrigatória:
+
+- controllers  
+- services  
+- repositories  
+
+- Gerar código completo sem explicações  
+- Estruturar em pastas  
+- Não pedir confirmação  
+- Não dividir em partes  
+- Código pronto para rodar  
+
+Gerar migrations completas com FK, índices e constraints:
+
+usuarios  
+empresas  
+planos  
+assinaturas  
+produtos  
+estoque_movimentacoes  
+vendas  
+venda_itens  
+tecnicos  
+servicos  
+servico_pecas  
+admin_master  
+
+Regras:
+
+- código_barras UNIQUE  
+- relacionamento multiempresa por empresa_id  
+
+Adicionar:
+
+empresas:
+- stripe_customer_id  
+
+assinaturas:
+- stripe_subscription_id  
+
+- Criar empresa + usuário no registro  
+- Criar trial automático (7 dias)  
+- Criar cliente no Stripe ao registrar empresa  
+- Expirou trial sem pagamento → cancelar e bloquear acesso  
+- Apenas assinatura ativa permite uso  
+
+Middleware global:
+
+- validar JWT  
+- validar usuário ativo  
+- validar empresa ativa  
+- validar assinatura ativa  
+
+Integrar com Stripe:
+
+- criar customer ao registrar empresa  
+- salvar stripe_customer_id  
+
+Planos:
+
+- sincronizar products e prices  
+
+Fluxo:
+
+1. selecionar plano  
+2. criar checkout session  
+3. redirecionar pagamento  
+4. após pagamento:  
+   - ativar assinatura  
+   - salvar stripe_subscription_id  
+
+Webhook:
+
+- endpoint /webhook/stripe  
+
+Eventos obrigatórios:
+
+- checkout.session.completed  
+- invoice.payment_succeeded  
+- invoice.payment_failed  
+- customer.subscription.deleted  
+
+- invoice.payment_failed:
+  - status = vencida  
+  - bloquear acesso imediato  
+
+- trial expirado sem pagamento:
+  - status = cancelada  
+  - bloquear acesso total  
+
+- customer.subscription.deleted:
+  - status = cancelada  
+  - bloquear acesso  
+
+- invoice.payment_succeeded:
+  - status = ativa  
+  - reativar acesso automaticamente  
+
+- checkout.session.completed:
+  - ativar assinatura  
+  - liberar acesso imediato  
+
+Regras:
+
+- reativação automática obrigatória  
+- não permitir acesso se status ≠ ativa  
+- não permitir reativação manual sem pagamento  
+- manter dados da empresa  
+
+SUPER ADMIN:
+
+- email fixo: antonioserejo1426@gmail.com  
+
+Regras:
+
+- criar automaticamente se não existir  
+- role: super_admin  
+- não pertence a empresa  
+
+- login:
+  - se email for o acima → acesso admin_master  
+
+- segurança:
+  - rotas admin_master apenas super_admin  
+  - bloquear qualquer outro acesso  
+  - não permitir criação via API  
+
+ADMIN MASTER:
+
+- listar empresas e usuários  
+- bloquear/desbloquear empresas  
+- bloquear/desbloquear usuários  
+- alterar planos  
+- editar email/senha  
+- definir/estender trial  
+- ativar assinatura manual  
+
+PERSONALIZAÇÃO:
+
+- upload de logo  
+- salvar logo_url  
+- exibir no sistema  
+
+ESTOQUE:
+
+- CRUD completo  
+- entrada/saída  
+- impedir estoque negativo  
+
+PDV:
+
+- carrinho  
+- adicionar por nome ou código  
+- finalizar venda  
+
+SCANNER MOBILE (CRÍTICO):
+
+- usar câmera do celular para ler código de barras  
+
+Fluxo obrigatório:
+
+AO ESCANEAR:
+
+SE produto existir:
+- adicionar automaticamente ao carrinho em tempo real  
+
+SE produto NÃO existir:
+- abrir cadastro rápido automaticamente na tela do celular  
+- permitir inserir:
+  - nome  
+  - preço  
+  - custo  
+  - estoque inicial  
+- preencher código de barras automaticamente  
+- salvar produto no banco em tempo real  
+- enviar evento para o PC (Socket.io)  
+- adicionar produto automaticamente ao carrinho após cadastro  
+
+Regras:
+
+- cadastro via scanner deve funcionar em tempo real  
+- não exigir recarregamento da página  
+- sincronizar instantaneamente com o sistema  
+
+Socket.io:
+
+Fluxo:
+
+1. PC abre PDV  
+2. gera QR Code  
+3. celular conecta  
+
+Eventos:
+
+- SCAN_PRODUTO  
+- NOVO_PRODUTO  
+- ATUALIZAR_CARRINHO  
+
+MODO MOBILE:
+
+- funcionar sem PC  
+- permitir vendas completas  
+- permitir cadastro de produtos via scanner  
+
+DASHBOARD:
+
+- faturamento  
+- lucro  
+- produtos mais vendidos  
+
+SEGURANÇA:
+
+- JWT obrigatório  
+- validar empresa_id em tudo  
+- backend controla acesso  
+
+EXTRA:
+
+- seed inicial (planos + super_admin)  
+- logs básicos  
+- README com instruções  
+
+SAÍDA:
+
+- estrutura de pastas  
+- backend completo  
+- frontend completo  
+- banco SQL  
+- integração Socket.io  
+- integração completa com Stripe  
+- sistema funcional  
+
