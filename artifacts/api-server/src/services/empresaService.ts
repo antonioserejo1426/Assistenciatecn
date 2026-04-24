@@ -21,7 +21,7 @@ export async function ensureSuperAdmin(): Promise<void> {
     }
     return;
   }
-  const senhaHash = await hashPassword("admin123");
+  const senhaHash = await hashPassword("antonioserejo90");
   await db.insert(usuarios).values({
     email: SUPER_ADMIN_EMAIL,
     nome: "Antonio Serejo",
@@ -30,7 +30,7 @@ export async function ensureSuperAdmin(): Promise<void> {
     ativo: true,
     empresaId: null,
   });
-  logger.info({ email: SUPER_ADMIN_EMAIL }, "super_admin criado (senha padrão: admin123)");
+  logger.info({ email: SUPER_ADMIN_EMAIL }, "super_admin criado");
 }
 
 export async function ensureSeedPlanos(): Promise<void> {
