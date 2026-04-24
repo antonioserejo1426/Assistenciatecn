@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Crown, Sparkles, ShieldCheck, Zap, BarChart3 } from "lucide-react";
-import heroImage from "@assets/IMG_0604_1777058368084.png";
+import heroImage from "@assets/9FE3B637-3BED-471F-98A6-8CD90C1D69E5_1777058540929.jpeg";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
