@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout";
 
 // Pages
 import NotFound from "@/pages/not-found";
+import Landing from "@/pages/landing/index";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
 import Dashboard from "@/pages/dashboard/index";
@@ -25,12 +26,13 @@ import Admin from "@/pages/admin/index";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: any) {
+function ProtectedRoute({ component: Component, adminOnly = false, publicFallback: PublicFallback, ...rest }: any) {
   const { token, isLoading, user, empresa, assinaturaStatus } = useAuth();
 
   if (isLoading) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
 
   if (!token || !user) {
+    if (PublicFallback) return <PublicFallback />;
     return <Redirect to="/login" />;
   }
 
@@ -82,7 +84,7 @@ function Router() {
       <Route path="/assinatura/sucesso" component={AssinaturaSucesso} />
       <Route path="/assinatura/cancelado" component={AssinaturaCancelado} />
       
-      <Route path="/">{(params) => <ProtectedRoute component={Dashboard} path="/" {...params} />}</Route>
+      <Route path="/">{(params) => <ProtectedRoute component={Dashboard} publicFallback={Landing} path="/" {...params} />}</Route>
       <Route path="/pdv">{(params) => <ProtectedRoute component={PDV} path="/pdv" {...params} />}</Route>
       <Route path="/produtos">{(params) => <ProtectedRoute component={Produtos} path="/produtos" {...params} />}</Route>
       <Route path="/estoque">{(params) => <ProtectedRoute component={Estoque} path="/estoque" {...params} />}</Route>

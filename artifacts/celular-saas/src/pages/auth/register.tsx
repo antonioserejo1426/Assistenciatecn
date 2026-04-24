@@ -1,15 +1,23 @@
-import { useLocation, Link } from "wouter";
+import { useLocation, Link, useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRegister, useSistemaGetInfo } from "@workspace/api-client-react";
+import {
+  useRegister,
+  useSistemaGetInfo,
+  useListPlanos,
+  useCreateCheckout,
+} from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Crown, Sparkles } from "lucide-react";
+import { Crown, Sparkles, Check } from "lucide-react";
 import heroImage from "@assets/9FE3B637-3BED-471F-98A6-8CD90C1D69E5_1777058540929.jpeg";
+
+const fmt = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 const registerSchema = z.object({
   empresaNome: z.string().min(2, "Nome da empresa deve ter no mínimo 2 caracteres"),
@@ -20,11 +28,21 @@ const registerSchema = z.object({
 
 export default function Register() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const planoIdParam = new URLSearchParams(search).get("plano");
+  const planoIdSelecionado = planoIdParam ? Number(planoIdParam) : null;
+
   const { setToken } = useAuth();
   const registerMutation = useRegister();
+  const checkoutMutation = useCreateCheckout();
   const { data: sistemaInfo } = useSistemaGetInfo({
     query: { staleTime: 0, refetchOnWindowFocus: true },
   });
+  const { data: planos = [] } = useListPlanos();
+  const planoSelecionado =
+    planoIdSelecionado != null
+      ? planos.find((p) => p.id === planoIdSelecionado) ?? null
+      : null;
   const trialDias = sistemaInfo?.trialDiasPadrao ?? 7;
 
   const form = useForm<z.infer<typeof registerSchema>>({
@@ -36,11 +54,27 @@ export default function Register() {
     registerMutation.mutate(
       { data: values },
       {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           setToken(data.token);
+          if (planoSelecionado) {
+            toast.success(`Conta criada! Vamos para o pagamento do plano ${planoSelecionado.nome}.`);
+            try {
+              const r = await checkoutMutation.mutateAsync({
+                data: { planoId: planoSelecionado.id },
+              });
+              window.location.href = r.url;
+              return;
+            } catch {
+              toast.error(
+                "Conta criada, mas não foi possível abrir o pagamento. Você está no período de teste — é só ir em Assinatura para ativar o plano.",
+              );
+              setLocation("/");
+              return;
+            }
+          }
           toast.success(
             trialDias > 0
-              ? `Bem-vindo ao TecnoFix! Seus ${trialDias} ${trialDias === 1 ? "dia" : "dias"} premium começam agora.`
+              ? `Bem-vindo ao TecnoFix! Seus ${trialDias} ${trialDias === 1 ? "dia" : "dias"} grátis começam agora.`
               : "Bem-vindo ao TecnoFix!",
           );
           setLocation("/");
@@ -77,18 +111,58 @@ export default function Register() {
 
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[hsl(38,92%,55%)]/30 bg-[hsl(38,92%,55%)]/10 px-3 py-1 text-xs font-medium text-white">
             <Sparkles className="h-3.5 w-3.5" />
-            Comece agora — sem cartão
+            {planoSelecionado ? `Plano ${planoSelecionado.nome} selecionado` : "Comece agora — sem cartão"}
           </div>
 
           <h2 className="mt-4 text-4xl font-display font-bold leading-tight tracking-tight text-white">
-            Crie sua conta premium
+            {planoSelecionado ? "Crie sua conta para assinar" : "Crie sua conta premium"}
           </h2>
           <p className="mt-3 text-base leading-6 text-white/75">
             Já tem uma conta?{" "}
-            <Link href="/login" className="font-semibold text-[hsl(38,92%,65%)] hover:underline underline-offset-4">
+            <Link
+              href={planoSelecionado ? `/login` : "/login"}
+              className="font-semibold text-[hsl(38,92%,65%)] hover:underline underline-offset-4"
+            >
               Faça login
             </Link>
           </p>
+
+          {planoSelecionado && (
+            <div className="mt-5 rounded-2xl border border-[hsl(38,92%,55%)]/40 bg-[hsl(38,92%,55%)]/10 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[hsl(38,92%,75%)]">
+                    Plano escolhido
+                  </div>
+                  <div className="mt-1 font-display text-xl font-bold text-white">
+                    {planoSelecionado.nome}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-display text-2xl font-bold text-white">
+                    {fmt(planoSelecionado.preco)}
+                  </div>
+                  <div className="text-[11px] text-white/70">/{planoSelecionado.intervalo}</div>
+                </div>
+              </div>
+              {planoSelecionado.recursos && planoSelecionado.recursos.length > 0 && (
+                <ul className="mt-3 space-y-1.5 text-xs text-white/80">
+                  {planoSelecionado.recursos.slice(0, 3).map((r, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-3.5 w-3.5 flex-none text-[hsl(38,92%,65%)]" />
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Link
+                href="/"
+                className="mt-3 inline-block text-[11px] font-semibold text-white/70 hover:text-white"
+              >
+                Trocar plano
+              </Link>
+            </div>
+          )}
 
           <div className="mt-10">
             <Form {...form}>
