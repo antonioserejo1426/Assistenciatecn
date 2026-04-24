@@ -9,6 +9,8 @@ type AuthContextType = {
   user: MeResponse["user"] | null;
   empresa: MeResponse["empresa"] | null;
   assinaturaStatus: string | null;
+  features: string[];
+  hasFeature: (code: string) => boolean;
   isLoading: boolean;
   logout: () => void;
 };
@@ -46,6 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [isError]);
 
+  const features = (meData?.features ?? []) as string[];
+  const hasFeature = (code: string) => features.includes(code);
+
   return (
     <AuthContext.Provider
       value={{
@@ -54,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: meData?.user ?? null,
         empresa: meData?.empresa ?? null,
         assinaturaStatus: meData?.assinaturaStatus ?? null,
+        features,
+        hasFeature,
         isLoading,
         logout,
       }}

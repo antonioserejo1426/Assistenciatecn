@@ -29,7 +29,17 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Users } from "lucide-react";
 
-export default function TecnicosPage() {
+import { FeatureGate } from "@/components/feature-gate";
+
+export default function TecnicosPageWrapper() {
+  return (
+    <FeatureGate feature="tecnicos">
+      <TecnicosPageInner />
+    </FeatureGate>
+  );
+}
+
+function TecnicosPageInner() {
   const qc = useQueryClient();
   const { data: tecnicos = [] } = useListTecnicos();
   const criar = useCreateTecnico();

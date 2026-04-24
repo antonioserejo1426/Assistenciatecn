@@ -47,6 +47,7 @@ export async function ensureSeedPlanos(): Promise<void> {
         "PDV completo",
         "Scanner via celular",
       ]),
+      features: JSON.stringify([]),
       ativo: true,
     },
     {
@@ -61,6 +62,7 @@ export async function ensureSeedPlanos(): Promise<void> {
         "Scanner via celular",
         "Suporte prioritário",
       ]),
+      features: JSON.stringify(["tecnicos", "servicos", "lucratividade"]),
       ativo: true,
     },
     {
@@ -74,6 +76,13 @@ export async function ensureSeedPlanos(): Promise<void> {
         "Relatórios avançados",
         "API completa",
         "Suporte 24/7",
+      ]),
+      features: JSON.stringify([
+        "tecnicos",
+        "servicos",
+        "lucratividade",
+        "filiais",
+        "relatorios_avancados",
       ]),
       ativo: true,
     },

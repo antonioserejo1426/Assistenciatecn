@@ -3,6 +3,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { initSocket } from "./lib/socket";
 import { ensureSuperAdmin, ensureSeedPlanos, syncStripePlanos } from "./services/empresaService";
+import { ensurePlanoFeatures } from "./services/featureService";
 
 const rawPort = process.env["PORT"];
 
@@ -20,6 +21,7 @@ async function bootstrap(): Promise<void> {
   try {
     await ensureSuperAdmin();
     await ensureSeedPlanos();
+    await ensurePlanoFeatures();
     void syncStripePlanos().catch((err) => logger.error({ err }, "syncStripePlanos failed"));
   } catch (err) {
     logger.error({ err }, "bootstrap seed failed");

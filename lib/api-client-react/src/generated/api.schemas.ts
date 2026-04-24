@@ -53,6 +53,7 @@ export interface MeResponse {
   user: User;
   empresa?: Empresa | null;
   assinaturaStatus: string;
+  features: string[];
 }
 
 export interface UpdateEmpresaBody {

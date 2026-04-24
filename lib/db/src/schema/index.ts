@@ -59,6 +59,7 @@ export const planos = pgTable("planos", {
   stripeProductId: varchar("stripe_product_id", { length: 200 }),
   stripePriceId: varchar("stripe_price_id", { length: 200 }),
   recursos: text("recursos"),
+  features: text("features"),
   ativo: boolean("ativo").notNull().default(true),
 });
 

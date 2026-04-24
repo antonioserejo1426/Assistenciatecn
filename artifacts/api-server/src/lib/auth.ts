@@ -116,3 +116,20 @@ export function requireSuperAdmin(req: Request, res: Response, next: NextFunctio
   }
   next();
 }
+
+export function requireFeature(feature: string) {
+  return async function (req: Request, res: Response, next: NextFunction) {
+    if (!req.auth) return res.status(401).json({ error: "no_auth" });
+    if (req.auth.role === "super_admin") return next();
+    const { getEmpresaFeatures } = await import("../services/featureService");
+    const features = await getEmpresaFeatures(req.auth.empresaId, req.auth.role);
+    if (!features.includes(feature as any)) {
+      return res.status(403).json({
+        error: "feature_indisponivel",
+        feature,
+        message: `Este recurso não está disponível no seu plano. Faça upgrade para liberar "${feature}".`,
+      });
+    }
+    next();
+  };
+}

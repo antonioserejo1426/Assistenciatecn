@@ -42,7 +42,17 @@ const STATUS = [
   { id: "entregue", label: "Entregue", cor: "bg-zinc-500" },
 ];
 
-export default function ServicosPage() {
+import { FeatureGate } from "@/components/feature-gate";
+
+export default function ServicosPageWrapper() {
+  return (
+    <FeatureGate feature="servicos">
+      <ServicosPageInner />
+    </FeatureGate>
+  );
+}
+
+function ServicosPageInner() {
   const qc = useQueryClient();
   const { data: servicos = [] } = useListServicos();
   const { data: tecnicos = [] } = useListTecnicos();

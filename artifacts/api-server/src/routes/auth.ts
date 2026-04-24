@@ -81,6 +81,8 @@ router.get("/auth/me", requireAuth, async (req, res) => {
       }
     }
   }
+  const { getEmpresaFeatures } = await import("../services/featureService");
+  const features = await getEmpresaFeatures(user.empresaId, user.role);
   res.json({
     user: {
       id: user.id,
@@ -100,6 +102,7 @@ router.get("/auth/me", requireAuth, async (req, res) => {
         }
       : null,
     assinaturaStatus: empresa?.bloqueada ? "bloqueada" : assinaturaStatus,
+    features,
   });
 });
 

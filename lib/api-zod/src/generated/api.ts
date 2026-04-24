@@ -93,6 +93,7 @@ export const MeResponse = zod.object({
     })
     .nullish(),
   assinaturaStatus: zod.string(),
+  features: zod.array(zod.string()),
 });
 
 /**

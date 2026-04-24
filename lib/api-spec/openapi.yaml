@@ -743,13 +743,16 @@ components:
         logoUrl: { type: string, nullable: true }
     MeResponse:
       type: object
-      required: [user, assinaturaStatus]
+      required: [user, assinaturaStatus, features]
       properties:
         user: { $ref: "#/components/schemas/User" }
         empresa:
           allOf: [{ $ref: "#/components/schemas/Empresa" }]
           nullable: true
         assinaturaStatus: { type: string }
+        features:
+          type: array
+          items: { type: string }
 
     Empresa:
       type: object

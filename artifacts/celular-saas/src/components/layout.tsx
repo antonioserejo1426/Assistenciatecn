@@ -32,7 +32,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { user, empresa, assinaturaStatus, logout } = useAuth();
+  const { user, empresa, assinaturaStatus, hasFeature, logout } = useAuth();
   const [location] = useLocation();
   const { data: sistemaInfo } = useSistemaGetInfo({
     query: { staleTime: 0, refetchOnWindowFocus: true },
@@ -99,8 +99,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     <NavItem href="/produtos" icon={Package} label="Produtos" active={isActive("/produtos")} />
                     <NavItem href="/estoque" icon={ArrowRightLeft} label="Estoque" active={isActive("/estoque")} />
                     <NavItem href="/vendas" icon={Receipt} label="Vendas" active={isActive("/vendas")} />
-                    <NavItem href="/servicos" icon={PenTool} label="Serviços" active={isActive("/servicos")} />
-                    <NavItem href="/tecnicos" icon={Users} label="Técnicos" active={isActive("/tecnicos")} />
+                    {hasFeature("servicos") && (
+                      <NavItem href="/servicos" icon={PenTool} label="Serviços" active={isActive("/servicos")} />
+                    )}
+                    {hasFeature("tecnicos") && (
+                      <NavItem href="/tecnicos" icon={Users} label="Técnicos" active={isActive("/tecnicos")} />
+                    )}
                   </>
                 )}
 
