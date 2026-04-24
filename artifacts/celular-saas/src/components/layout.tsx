@@ -12,7 +12,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isActive = (path: string) => location === path;
 
   const isSuperAdmin = user?.role === 'super_admin';
-  const blocked = !isSuperAdmin && assinaturaStatus !== 'ativa' && assinaturaStatus !== 'trial';
+  const empresaBloqueada = !!empresa?.bloqueada || empresa?.ativa === false;
+  const blocked = !isSuperAdmin && (empresaBloqueada || (assinaturaStatus !== 'ativa' && assinaturaStatus !== 'trial'));
 
   return (
     <SidebarProvider>

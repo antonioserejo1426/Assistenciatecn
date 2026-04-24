@@ -575,6 +575,45 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/OkResponse" }
 
+  /admin/empresas/{id}/usuarios:
+    get:
+      operationId: adminListUsuariosEmpresa
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminUsuario" }
+
+  /admin/usuarios/{id}:
+    patch:
+      operationId: adminUpdateUsuario
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateUsuarioBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
   /admin/resumo:
     get:
       operationId: adminResumo
@@ -647,6 +686,7 @@ components:
         nome: { type: string }
         logoUrl: { type: string, nullable: true }
         ativa: { type: boolean }
+        bloqueada: { type: boolean }
         trialFim: { type: string, nullable: true }
         stripeCustomerId: { type: string, nullable: true }
     UpdateEmpresaBody:
@@ -910,9 +950,27 @@ components:
         adminEmail: { type: string, nullable: true }
     ToggleBloqueioBody:
       type: object
-      required: [bloqueado]
+      required: [bloqueada]
       properties:
-        bloqueado: { type: boolean }
+        bloqueada: { type: boolean }
+    AdminUsuario:
+      type: object
+      required: [id, nome, email, role, ativo]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        email: { type: string }
+        role: { type: string }
+        ativo: { type: boolean }
+        empresaId: { type: integer, nullable: true }
+        criadoEm: { type: string, nullable: true }
+    AdminUpdateUsuarioBody:
+      type: object
+      properties:
+        nome: { type: string }
+        email: { type: string }
+        senha: { type: string }
+        ativo: { type: boolean }
     EstenderTrialBody:
       type: object
       required: [dias]

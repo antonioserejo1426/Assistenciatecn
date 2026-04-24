@@ -7,9 +7,13 @@ import {
   useAdminToggleBloqueioEmpresa,
   useAdminEstenderTrial,
   useAdminAtivarAssinatura,
+  useAdminListUsuariosEmpresa,
+  useAdminUpdateUsuario,
+  useAdminToggleBloqueioUsuario,
   useListPlanos,
   getAdminListEmpresasQueryKey,
   getAdminResumoQueryKey,
+  getAdminListUsuariosEmpresaQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +42,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Lock, Unlock, Calendar, Sparkles, Building2, Users, AlertTriangle, DollarSign } from "lucide-react";
+import { Lock, Unlock, Calendar, Sparkles, Building2, Users, AlertTriangle, DollarSign, KeyRound, UserCog } from "lucide-react";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -57,6 +61,18 @@ export default function AdminPage() {
   const [ativarDialog, setAtivarDialog] = useState<number | null>(null);
   const [ativarPlanoId, setAtivarPlanoId] = useState("");
   const [ativarDias, setAtivarDias] = useState("30");
+  const [usuariosDialog, setUsuariosDialog] = useState<{ id: number; nome: string } | null>(null);
+  const [editUsuario, setEditUsuario] = useState<any | null>(null);
+  const [editNome, setEditNome] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editSenha, setEditSenha] = useState("");
+
+  const toggleUsuario = useAdminToggleBloqueioUsuario();
+  const updateUsuario = useAdminUpdateUsuario();
+  const { data: usuariosEmpresa = [], isFetching: loadingUsuarios } = useAdminListUsuariosEmpresa(
+    usuariosDialog?.id ?? 0,
+    { query: { enabled: !!usuariosDialog } },
+  );
 
   function refresh() {
     qc.invalidateQueries({ queryKey: getAdminListEmpresasQueryKey() });
@@ -86,6 +102,54 @@ export default function AdminPage() {
     toast.success("Assinatura ativada");
     setAtivarDialog(null);
     refresh();
+  }
+
+  function refreshUsuarios() {
+    if (usuariosDialog) {
+      qc.invalidateQueries({ queryKey: getAdminListUsuariosEmpresaQueryKey(usuariosDialog.id) });
+    }
+  }
+
+  async function bloquearUsuario(id: number, ativo: boolean) {
+    await toggleUsuario.mutateAsync({ id, data: { bloqueada: ativo } });
+    toast.success(ativo ? "Usuário bloqueado" : "Usuário desbloqueado");
+    refreshUsuarios();
+  }
+
+  function abrirEdicao(u: any) {
+    setEditUsuario(u);
+    setEditNome(u.nome ?? "");
+    setEditEmail(u.email ?? "");
+    setEditSenha("");
+  }
+
+  async function salvarEdicao() {
+    if (!editUsuario) return;
+    const data: Record<string, unknown> = {};
+    if (editNome.trim() && editNome.trim() !== editUsuario.nome) data["nome"] = editNome.trim();
+    if (editEmail.trim() && editEmail.trim().toLowerCase() !== editUsuario.email) {
+      data["email"] = editEmail.trim().toLowerCase();
+    }
+    if (editSenha.trim()) {
+      if (editSenha.length < 4) {
+        toast.error("Senha deve ter no mínimo 4 caracteres");
+        return;
+      }
+      data["senha"] = editSenha;
+    }
+    if (Object.keys(data).length === 0) {
+      toast.info("Nenhuma alteração");
+      return;
+    }
+    try {
+      await updateUsuario.mutateAsync({ id: editUsuario.id, data });
+      toast.success("Usuário atualizado");
+      setEditUsuario(null);
+      refreshUsuarios();
+    } catch (err: any) {
+      const msg = err?.message ?? "Erro ao atualizar usuário";
+      toast.error(msg);
+    }
   }
 
   return (
@@ -172,6 +236,9 @@ export default function AdminPage() {
                       <Button size="sm" variant="outline" onClick={() => { setAtivarDialog(e.id); setAtivarPlanoId(""); setAtivarDias("30"); }}>
                         <Sparkles className="mr-1 h-3 w-3" /> Ativar
                       </Button>
+                      <Button size="sm" variant="outline" onClick={() => setUsuariosDialog({ id: e.id, nome: e.nome })}>
+                        <UserCog className="mr-1 h-3 w-3" /> Usuários
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -222,6 +289,97 @@ export default function AdminPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAtivarDialog(null)}>Cancelar</Button>
             <Button onClick={aplicarAtivar} disabled={!ativarPlanoId}>Ativar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!usuariosDialog} onOpenChange={(o) => !o && setUsuariosDialog(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Usuários — {usuariosDialog?.nome}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {loadingUsuarios ? (
+              <p className="text-sm text-muted-foreground">Carregando...</p>
+            ) : usuariosEmpresa.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum usuário cadastrado nessa empresa.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Função</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[230px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {usuariosEmpresa.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.nome}</TableCell>
+                      <TableCell className="text-sm">{u.email}</TableCell>
+                      <TableCell><Badge variant="outline" className="capitalize">{u.role}</Badge></TableCell>
+                      <TableCell>
+                        {u.ativo ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Ativo</Badge>
+                        ) : (
+                          <Badge variant="destructive">Bloqueado</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          <Button size="sm" variant="outline" onClick={() => abrirEdicao(u)}>
+                            <KeyRound className="mr-1 h-3 w-3" /> Editar
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => bloquearUsuario(u.id, u.ativo)}>
+                            {u.ativo ? <Lock className="mr-1 h-3 w-3" /> : <Unlock className="mr-1 h-3 w-3" />}
+                            {u.ativo ? "Bloquear" : "Ativar"}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUsuariosDialog(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editUsuario} onOpenChange={(o) => !o && setEditUsuario(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar usuário</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div>
+              <Label>Nome</Label>
+              <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
+            </div>
+            <div>
+              <Label>E-mail</Label>
+              <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+            </div>
+            <div>
+              <Label>Nova senha</Label>
+              <Input
+                type="password"
+                placeholder="Deixe em branco para não alterar"
+                value={editSenha}
+                onChange={(e) => setEditSenha(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Mínimo 4 caracteres</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUsuario(null)}>Cancelar</Button>
+            <Button onClick={salvarEdicao} disabled={updateUsuario.isPending}>
+              {updateUsuario.isPending ? "Salvando..." : "Salvar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

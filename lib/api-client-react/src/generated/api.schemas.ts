@@ -44,6 +44,7 @@ export interface Empresa {
   nome: string;
   logoUrl?: string | null;
   ativa?: boolean;
+  bloqueada?: boolean;
   trialFim?: string | null;
   stripeCustomerId?: string | null;
 }
@@ -269,7 +270,24 @@ export interface EmpresaAdmin {
 }
 
 export interface ToggleBloqueioBody {
-  bloqueado: boolean;
+  bloqueada: boolean;
+}
+
+export interface AdminUsuario {
+  id: number;
+  nome: string;
+  email: string;
+  role: string;
+  ativo: boolean;
+  empresaId?: number | null;
+  criadoEm?: string | null;
+}
+
+export interface AdminUpdateUsuarioBody {
+  nome?: string;
+  email?: string;
+  senha?: string;
+  ativo?: boolean;
 }
 
 export interface EstenderTrialBody {

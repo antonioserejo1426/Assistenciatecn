@@ -26,10 +26,10 @@ import Admin from "@/pages/admin/index";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: any) {
-  const { token, isLoading, user, assinaturaStatus } = useAuth();
-  
+  const { token, isLoading, user, empresa, assinaturaStatus } = useAuth();
+
   if (isLoading) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
-  
+
   if (!token || !user) {
     return <Redirect to="/login" />;
   }
@@ -38,7 +38,23 @@ function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: an
     return <Redirect to="/" />;
   }
 
-  if (user.role !== "super_admin" && assinaturaStatus !== "trial" && assinaturaStatus !== "ativa" && rest.path !== "/assinatura") {
+  const isSuperAdmin = user.role === "super_admin";
+  const empresaBloqueada = !!empresa?.bloqueada || empresa?.ativa === false;
+  const semAssinaturaValida = assinaturaStatus !== "trial" && assinaturaStatus !== "ativa";
+  const liberadoNaRota = rest.path === "/assinatura" || rest.path === "/configuracoes";
+
+  if (!isSuperAdmin && empresaBloqueada) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
+          <h2 className="text-2xl font-bold text-destructive">Conta Bloqueada</h2>
+          <p>Sua empresa foi bloqueada pelo administrador do sistema. Entre em contato com o suporte para regularizar.</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!isSuperAdmin && semAssinaturaValida && !liberadoNaRota) {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">

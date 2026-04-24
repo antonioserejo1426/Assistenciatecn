@@ -18,6 +18,8 @@ import type {
 
 import type {
   AdminResumo,
+  AdminUpdateUsuarioBody,
+  AdminUsuario,
   Assinatura,
   AtivarAssinaturaBody,
   AuthResponse,
@@ -2885,6 +2887,169 @@ export const useAdminToggleBloqueioUsuario = <
   TContext
 > => {
   return useMutation(getAdminToggleBloqueioUsuarioMutationOptions(options));
+};
+
+export const getAdminListUsuariosEmpresaUrl = (id: number) => {
+  return `/api/admin/empresas/${id}/usuarios`;
+};
+
+export const adminListUsuariosEmpresa = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminUsuario[]> => {
+  return customFetch<AdminUsuario[]>(getAdminListUsuariosEmpresaUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListUsuariosEmpresaQueryKey = (id: number) => {
+  return [`/api/admin/empresas/${id}/usuarios`] as const;
+};
+
+export const getAdminListUsuariosEmpresaQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListUsuariosEmpresa>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListUsuariosEmpresa>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListUsuariosEmpresaQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListUsuariosEmpresa>>
+  > = ({ signal }) =>
+    adminListUsuariosEmpresa(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListUsuariosEmpresa>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListUsuariosEmpresaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListUsuariosEmpresa>>
+>;
+export type AdminListUsuariosEmpresaQueryError = ErrorType<unknown>;
+
+export function useAdminListUsuariosEmpresa<
+  TData = Awaited<ReturnType<typeof adminListUsuariosEmpresa>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListUsuariosEmpresa>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListUsuariosEmpresaQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getAdminUpdateUsuarioUrl = (id: number) => {
+  return `/api/admin/usuarios/${id}`;
+};
+
+export const adminUpdateUsuario = async (
+  id: number,
+  adminUpdateUsuarioBody: AdminUpdateUsuarioBody,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getAdminUpdateUsuarioUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateUsuarioBody),
+  });
+};
+
+export const getAdminUpdateUsuarioMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateUsuario>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateUsuarioBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateUsuario>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateUsuarioBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateUsuario"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateUsuario>>,
+    { id: number; data: BodyType<AdminUpdateUsuarioBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateUsuario(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateUsuarioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateUsuario>>
+>;
+export type AdminUpdateUsuarioMutationBody = BodyType<AdminUpdateUsuarioBody>;
+export type AdminUpdateUsuarioMutationError = ErrorType<unknown>;
+
+export const useAdminUpdateUsuario = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateUsuario>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateUsuarioBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateUsuario>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateUsuarioBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateUsuarioMutationOptions(options));
 };
 
 export const getAdminResumoUrl = () => {

@@ -74,6 +74,7 @@ export const MeResponse = zod.object({
       nome: zod.string(),
       logoUrl: zod.string().nullish(),
       ativa: zod.boolean().optional(),
+      bloqueada: zod.boolean().optional(),
       trialFim: zod.string().nullish(),
       stripeCustomerId: zod.string().nullish(),
     })
@@ -89,6 +90,7 @@ export const GetEmpresaResponse = zod.object({
   nome: zod.string(),
   logoUrl: zod.string().nullish(),
   ativa: zod.boolean().optional(),
+  bloqueada: zod.boolean().optional(),
   trialFim: zod.string().nullish(),
   stripeCustomerId: zod.string().nullish(),
 });
@@ -106,6 +108,7 @@ export const UpdateEmpresaResponse = zod.object({
   nome: zod.string(),
   logoUrl: zod.string().nullish(),
   ativa: zod.boolean().optional(),
+  bloqueada: zod.boolean().optional(),
   trialFim: zod.string().nullish(),
   stripeCustomerId: zod.string().nullish(),
 });
@@ -556,7 +559,7 @@ export const AdminToggleBloqueioEmpresaParams = zod.object({
 });
 
 export const AdminToggleBloqueioEmpresaBody = zod.object({
-  bloqueado: zod.boolean(),
+  bloqueada: zod.boolean(),
 });
 
 export const AdminToggleBloqueioEmpresaResponse = zod.object({
@@ -592,10 +595,42 @@ export const AdminToggleBloqueioUsuarioParams = zod.object({
 });
 
 export const AdminToggleBloqueioUsuarioBody = zod.object({
-  bloqueado: zod.boolean(),
+  bloqueada: zod.boolean(),
 });
 
 export const AdminToggleBloqueioUsuarioResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+export const AdminListUsuariosEmpresaParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminListUsuariosEmpresaResponseItem = zod.object({
+  id: zod.number(),
+  nome: zod.string(),
+  email: zod.string(),
+  role: zod.string(),
+  ativo: zod.boolean(),
+  empresaId: zod.number().nullish(),
+  criadoEm: zod.string().nullish(),
+});
+export const AdminListUsuariosEmpresaResponse = zod.array(
+  AdminListUsuariosEmpresaResponseItem,
+);
+
+export const AdminUpdateUsuarioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateUsuarioBody = zod.object({
+  nome: zod.string().optional(),
+  email: zod.string().optional(),
+  senha: zod.string().optional(),
+  ativo: zod.boolean().optional(),
+});
+
+export const AdminUpdateUsuarioResponse = zod.object({
   ok: zod.boolean(),
 });
 

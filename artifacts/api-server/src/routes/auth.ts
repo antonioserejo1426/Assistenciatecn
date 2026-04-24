@@ -95,10 +95,11 @@ router.get("/auth/me", requireAuth, async (req, res) => {
           nome: empresa.nome,
           logoUrl: empresa.logoUrl,
           ativa: empresa.ativa,
+          bloqueada: empresa.bloqueada,
           trialFim: empresa.trialFim,
         }
       : null,
-    assinaturaStatus,
+    assinaturaStatus: empresa?.bloqueada ? "bloqueada" : assinaturaStatus,
   });
 });
 
