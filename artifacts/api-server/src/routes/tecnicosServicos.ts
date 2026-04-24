@@ -42,7 +42,7 @@ router.post("/servicos", async (req, res) => {
   });
 });
 
-router.put("/servicos/:id", async (req, res) => {
+router.patch("/servicos/:id", async (req, res) => {
   const s = await svc.updateServico(req.auth!.empresaId!, Number(req.params.id), req.body);
   if (!s) return res.status(404).json({ error: "nao_encontrado" });
   res.json({

@@ -19,7 +19,7 @@ router.get("/empresa", requireAuth, async (req, res) => {
   });
 });
 
-router.put("/empresa", requireAuth, requireActiveSubscription, async (req, res) => {
+router.patch("/empresa", requireAuth, requireActiveSubscription, async (req, res) => {
   if (!req.auth?.empresaId) return res.status(403).json({ error: "sem_empresa" });
   const { nome, logoUrl } = req.body ?? {};
   const update: Record<string, unknown> = {};

@@ -50,7 +50,8 @@
   --color-sidebar-accent-border: var(--sidebar-accent-border);
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'Plus Jakarta Sans', var(--app-font-sans);
+  --font-sans: 'Inter', var(--app-font-sans);
+  --font-display: 'Playfair Display', Georgia, serif;
   --font-mono: 'Space Mono', var(--app-font-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -66,48 +67,62 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 210 20% 98%; /* Light gray-blue */
+  /* === LUXURY PALETTE — Royal Gold on Onyx === */
+  --background: 36 33% 97%;            /* Warm ivory */
   --foreground: 222 47% 11%;
-  --border: 214 32% 91%;
+  --border: 36 20% 88%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
-  
-  --sidebar: 222 47% 11%; /* Dark workshop sidebar */
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 215 28% 17%;
-  --sidebar-primary: 24 98% 50%; /* Orange accent */
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 215 28% 17%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 217 91% 60%;
+  --card-border: 36 25% 90%;
+
+  /* Sidebar: deep onyx with royal feel */
+  --sidebar: 222 47% 8%;
+  --sidebar-foreground: 36 30% 92%;
+  --sidebar-border: 222 40% 14%;
+  --sidebar-primary: 38 92% 55%;        /* Gold accent */
+  --sidebar-primary-foreground: 222 47% 8%;
+  --sidebar-accent: 222 40% 14%;
+  --sidebar-accent-foreground: 38 92% 70%;
+  --sidebar-ring: 38 92% 55%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
+  --popover-border: 36 25% 90%;
 
-  --primary: 24 98% 50%; /* Workshop Orange */
-  --primary-foreground: 0 0% 100%;
-  
-  --secondary: 210 40% 96%;
+  /* Primary: Royal Gold */
+  --primary: 36 92% 50%;
+  --primary-foreground: 222 47% 8%;
+
+  --secondary: 36 30% 94%;
   --secondary-foreground: 222 47% 11%;
-  
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 210 40% 96%;
+
+  --muted: 36 25% 95%;
+  --muted-foreground: 222 15% 40%;
+
+  --accent: 38 92% 92%;
   --accent-foreground: 222 47% 11%;
-  
-  --destructive: 0 84% 60%;
+
+  --destructive: 0 75% 52%;
   --destructive-foreground: 0 0% 100%;
-  
-  --input: 214 32% 91%;
-  --ring: 24 98% 50%;
+
+  --input: 36 25% 88%;
+  --ring: 38 92% 55%;
 
   --app-font-sans: 'Inter', sans-serif;
-  --app-font-serif: Georgia, serif;
+  --app-font-serif: 'Playfair Display', Georgia, serif;
   --app-font-mono: Menlo, monospace;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
+
+  /* === Luxury gradients & glows === */
+  --gold-gradient: linear-gradient(135deg, hsl(40 96% 60%) 0%, hsl(36 92% 50%) 45%, hsl(28 85% 42%) 100%);
+  --gold-gradient-soft: linear-gradient(135deg, hsl(40 96% 70%) 0%, hsl(36 92% 55%) 100%);
+  --onyx-gradient: linear-gradient(160deg, hsl(222 47% 10%) 0%, hsl(222 47% 6%) 60%, hsl(222 47% 4%) 100%);
+  --shimmer-gradient: linear-gradient(110deg, transparent 25%, rgba(255, 215, 130, 0.18) 45%, rgba(255, 215, 130, 0.35) 50%, rgba(255, 215, 130, 0.18) 55%, transparent 75%);
+
+  --shadow-luxe: 0 1px 0 rgba(255,255,255,0.6) inset, 0 1px 2px rgba(20, 20, 30, 0.04), 0 18px 40px -22px rgba(20, 20, 30, 0.18);
+  --shadow-luxe-lg: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -10px rgba(20, 20, 30, 0.10), 0 30px 60px -20px rgba(20, 20, 30, 0.18);
+  --shadow-gold-glow: 0 8px 30px -8px rgba(232, 165, 30, 0.55), 0 0 0 1px rgba(232, 165, 30, 0.18);
+  --shadow-gold-glow-lg: 0 14px 50px -10px rgba(232, 165, 30, 0.55), 0 0 0 1px rgba(232, 165, 30, 0.20);
 }
 
 @layer base {
@@ -115,6 +130,185 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(at 0% 0%, hsla(38, 92%, 55%, 0.06) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(222, 47%, 11%, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
   }
+  h1, h2, h3, h4, h5 {
+    letter-spacing: -0.015em;
+  }
+}
+
+/* ============================================
+   LUXURY UTILITIES
+   ============================================ */
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.text-gold-gradient {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-gold-gradient {
+  background-image: var(--gold-gradient);
+}
+
+.bg-onyx-gradient {
+  background-image: var(--onyx-gradient);
+}
+
+.btn-luxe {
+  background-image: var(--gold-gradient);
+  color: hsl(var(--primary-foreground));
+  box-shadow: var(--shadow-gold-glow);
+  transition: transform 220ms cubic-bezier(.2,.7,.2,1), box-shadow 220ms;
+}
+.btn-luxe:hover {
+  box-shadow: var(--shadow-gold-glow-lg);
+  transform: translateY(-1px);
+}
+.btn-luxe:active {
+  transform: translateY(0);
+}
+
+.card-luxe {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--card-border));
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-luxe);
+  position: relative;
+  overflow: hidden;
+}
+.card-luxe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0) 40%);
+  opacity: 0.6;
+}
+
+.card-luxe-elevated {
+  box-shadow: var(--shadow-luxe-lg);
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: "";
+  position: absolute;
+  top: -1px; left: -1px; right: -1px;
+  height: 3px;
+  background: var(--gold-gradient);
+  opacity: 0.85;
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+}
+
+.glass-panel {
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.65));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-luxe);
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsla(38, 92%, 55%, 0.45), transparent);
+}
+
+/* Sidebar luxe */
+.sidebar-luxe {
+  background-image: var(--onyx-gradient);
+  position: relative;
+}
+.sidebar-luxe::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, hsla(38, 92%, 55%, 0.35), transparent);
+  pointer-events: none;
+}
+
+/* Animated golden ring spinner / loader */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: var(--shimmer-gradient);
+  background-size: 200% 100%;
+  animation: shimmer 2.6s linear infinite;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 165, 30, 0.0); }
+  50% { box-shadow: 0 0 40px 4px rgba(232, 165, 30, 0.35); }
+}
+.glow-pulse {
+  animation: glow-pulse 3.5s ease-in-out infinite;
+}
+
+@keyframes auroras {
+  0% { transform: translate3d(0,0,0) scale(1); }
+  50% { transform: translate3d(2%, -2%, 0) scale(1.08); }
+  100% { transform: translate3d(0,0,0) scale(1); }
+}
+
+.aurora-bg {
+  position: relative;
+  overflow: hidden;
+}
+.aurora-bg::before,
+.aurora-bg::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.aurora-bg::before {
+  width: 520px; height: 520px;
+  top: -120px; left: -120px;
+  background: radial-gradient(circle, hsla(38, 92%, 60%, 0.45), transparent 60%);
+  animation: auroras 16s ease-in-out infinite;
+}
+.aurora-bg::after {
+  width: 620px; height: 620px;
+  bottom: -160px; right: -160px;
+  background: radial-gradient(circle, hsla(28, 85%, 45%, 0.40), transparent 60%);
+  animation: auroras 22s ease-in-out infinite reverse;
+}
+
+.gold-ring {
+  box-shadow: 0 0 0 1px rgba(232, 165, 30, 0.35), 0 8px 24px -8px rgba(232, 165, 30, 0.45);
+}
+
+/* Tabular numbers for currency */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }

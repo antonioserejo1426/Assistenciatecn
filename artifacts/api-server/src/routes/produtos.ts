@@ -54,7 +54,7 @@ router.get("/produtos/:id", async (req, res) => {
   res.json(mapProduto(p));
 });
 
-router.put("/produtos/:id", async (req, res) => {
+router.patch("/produtos/:id", async (req, res) => {
   const p = await svc.updateProduto(req.auth!.empresaId!, Number(req.params.id), req.body);
   if (!p) return res.status(404).json({ error: "nao_encontrado" });
   res.json(mapProduto(p));
