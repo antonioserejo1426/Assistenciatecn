@@ -48,12 +48,14 @@ import type {
   RegisterBody,
   ScannerSessao,
   Servico,
+  SistemaConfig,
   Tecnico,
   ToggleBloqueioBody,
   TopProduto,
   UpdateEmpresaBody,
   UpdateProdutoBody,
   UpdateServicoBody,
+  UpdateSistemaConfigBody,
   Venda,
   VendaDetalhada,
 } from "./api.schemas";
@@ -3279,3 +3281,152 @@ export function useAdminResumo<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+export const getAdminGetConfiguracoesUrl = () => {
+  return `/api/admin/configuracoes`;
+};
+
+export const adminGetConfiguracoes = async (
+  options?: RequestInit,
+): Promise<SistemaConfig> => {
+  return customFetch<SistemaConfig>(getAdminGetConfiguracoesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetConfiguracoesQueryKey = () => {
+  return [`/api/admin/configuracoes`] as const;
+};
+
+export const getAdminGetConfiguracoesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetConfiguracoes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetConfiguracoes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetConfiguracoesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetConfiguracoes>>
+  > = ({ signal }) => adminGetConfiguracoes({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetConfiguracoes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetConfiguracoesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetConfiguracoes>>
+>;
+export type AdminGetConfiguracoesQueryError = ErrorType<unknown>;
+
+export function useAdminGetConfiguracoes<
+  TData = Awaited<ReturnType<typeof adminGetConfiguracoes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetConfiguracoes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetConfiguracoesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getAdminUpdateConfiguracoesUrl = () => {
+  return `/api/admin/configuracoes`;
+};
+
+export const adminUpdateConfiguracoes = async (
+  updateSistemaConfigBody: UpdateSistemaConfigBody,
+  options?: RequestInit,
+): Promise<SistemaConfig> => {
+  return customFetch<SistemaConfig>(getAdminUpdateConfiguracoesUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateSistemaConfigBody),
+  });
+};
+
+export const getAdminUpdateConfiguracoesMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateConfiguracoes>>,
+    TError,
+    { data: BodyType<UpdateSistemaConfigBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateConfiguracoes>>,
+  TError,
+  { data: BodyType<UpdateSistemaConfigBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateConfiguracoes"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateConfiguracoes>>,
+    { data: BodyType<UpdateSistemaConfigBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminUpdateConfiguracoes(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateConfiguracoesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateConfiguracoes>>
+>;
+export type AdminUpdateConfiguracoesMutationBody =
+  BodyType<UpdateSistemaConfigBody>;
+export type AdminUpdateConfiguracoesMutationError = ErrorType<unknown>;
+
+export const useAdminUpdateConfiguracoes = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateConfiguracoes>>,
+    TError,
+    { data: BodyType<UpdateSistemaConfigBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateConfiguracoes>>,
+  TError,
+  { data: BodyType<UpdateSistemaConfigBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateConfiguracoesMutationOptions(options));
+};

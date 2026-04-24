@@ -249,6 +249,14 @@ export const adminMaster = pgTable("admin_master", {
     .defaultNow(),
 });
 
+export const sistemaConfig = pgTable("sistema_config", {
+  id: serial("id").primaryKey(),
+  trialDiasPadrao: integer("trial_dias_padrao").notNull().default(7),
+  atualizadoEm: timestamp("atualizado_em", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Empresa = typeof empresas.$inferSelect;
 export type Usuario = typeof usuarios.$inferSelect;
 export type Plano = typeof planos.$inferSelect;

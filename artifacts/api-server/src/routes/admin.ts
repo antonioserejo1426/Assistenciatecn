@@ -22,9 +22,36 @@ router.post("/admin/empresas/:id/bloqueio", async (req, res) => {
 });
 
 router.post("/admin/empresas/:id/trial", async (req, res) => {
-  const dias = Number(req.body?.dias ?? 7);
-  const r = await svc.adminEstenderTrial(Number(req.params.id), dias);
-  res.json(r);
+  try {
+    const r = await svc.adminEstenderTrial(Number(req.params.id), {
+      modo: req.body?.modo,
+      dias: req.body?.dias !== undefined ? Number(req.body.dias) : undefined,
+      trialFim: req.body?.trialFim,
+    });
+    res.json(r);
+  } catch (err) {
+    const code = err instanceof Error ? err.message : "ERRO";
+    if (code === "NOT_FOUND") return res.status(404).json({ error: "empresa_nao_encontrada" });
+    return res.status(400).json({ error: code.toLowerCase() });
+  }
+});
+
+router.get("/admin/configuracoes", async (_req, res) => {
+  const cfg = await svc.getSistemaConfig();
+  res.json({ trialDiasPadrao: cfg.trialDiasPadrao, atualizadoEm: cfg.atualizadoEm });
+});
+
+router.patch("/admin/configuracoes", async (req, res) => {
+  try {
+    const cfg = await svc.updateSistemaConfig({
+      trialDiasPadrao:
+        req.body?.trialDiasPadrao !== undefined ? Number(req.body.trialDiasPadrao) : undefined,
+    });
+    res.json({ trialDiasPadrao: cfg.trialDiasPadrao, atualizadoEm: cfg.atualizadoEm });
+  } catch (err) {
+    const code = err instanceof Error ? err.message : "ERRO";
+    return res.status(400).json({ error: code.toLowerCase() });
+  }
 });
 
 router.post("/admin/empresas/:id/ativar-assinatura", async (req, res) => {

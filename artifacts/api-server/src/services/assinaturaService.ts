@@ -1,9 +1,38 @@
-import { db, planos, assinaturas, empresas } from "@workspace/db";
+import { db, planos, assinaturas, empresas, sistemaConfig } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { stripe } from "../lib/stripe";
 import { logger } from "../lib/logger";
 
-const TRIAL_DAYS = Number(process.env["STRIPE_TRIAL_DAYS"] ?? "7");
+const FALLBACK_TRIAL_DAYS = Number(process.env["STRIPE_TRIAL_DAYS"] ?? "7");
+
+export async function getSistemaConfig() {
+  const [cfg] = await db.select().from(sistemaConfig).limit(1);
+  if (cfg) return cfg;
+  const [novo] = await db
+    .insert(sistemaConfig)
+    .values({ trialDiasPadrao: FALLBACK_TRIAL_DAYS })
+    .returning();
+  return novo!;
+}
+
+export async function getTrialDiasPadrao(): Promise<number> {
+  const cfg = await getSistemaConfig();
+  return cfg.trialDiasPadrao;
+}
+
+export async function updateSistemaConfig(input: { trialDiasPadrao?: number }) {
+  const cfg = await getSistemaConfig();
+  const updates: Record<string, unknown> = { atualizadoEm: new Date() };
+  if (typeof input.trialDiasPadrao === "number") {
+    if (input.trialDiasPadrao < 0 || input.trialDiasPadrao > 365) {
+      throw new Error("DIAS_INVALIDO");
+    }
+    updates["trialDiasPadrao"] = input.trialDiasPadrao;
+  }
+  await db.update(sistemaConfig).set(updates).where(eq(sistemaConfig.id, cfg.id));
+  const [atual] = await db.select().from(sistemaConfig).where(eq(sistemaConfig.id, cfg.id)).limit(1);
+  return atual!;
+}
 
 export async function listPlanos() {
   const lista = await db.select().from(planos).where(eq(planos.ativo, true));
@@ -77,7 +106,7 @@ export async function criarCheckout(
     customer: customerId,
     line_items: [{ price: plano.stripePriceId, quantity: 1 }],
     subscription_data: {
-      trial_period_days: TRIAL_DAYS,
+      trial_period_days: await getTrialDiasPadrao(),
       metadata: { empresaId: String(empresaId), planoId: String(planoId) },
     },
     metadata: { empresaId: String(empresaId), planoId: String(planoId) },
@@ -249,16 +278,48 @@ export async function adminBloquear(empresaId: number, bloqueada: boolean) {
   return { ok: true };
 }
 
-export async function adminEstenderTrial(empresaId: number, dias: number) {
+export type ModoTrial = "adicionar" | "definir" | "data";
+
+export async function adminEstenderTrial(
+  empresaId: number,
+  input: { modo?: ModoTrial; dias?: number; trialFim?: string | Date },
+) {
   const [emp] = await db.select().from(empresas).where(eq(empresas.id, empresaId)).limit(1);
   if (!emp) throw new Error("NOT_FOUND");
-  const base = emp.trialFim && emp.trialFim > new Date() ? emp.trialFim : new Date();
-  const novoFim = new Date(base.getTime() + dias * 24 * 60 * 60 * 1000);
-  await db.update(empresas).set({ trialFim: novoFim }).where(eq(empresas.id, empresaId));
-  await db
-    .update(assinaturas)
-    .set({ status: "trial", proximoVencimento: novoFim })
-    .where(eq(assinaturas.empresaId, empresaId));
+
+  const modo: ModoTrial = input.modo ?? "adicionar";
+  let novoFim: Date;
+
+  if (modo === "data") {
+    if (!input.trialFim) throw new Error("TRIAL_FIM_OBRIGATORIO");
+    novoFim = new Date(input.trialFim);
+    if (Number.isNaN(novoFim.getTime())) throw new Error("DATA_INVALIDA");
+  } else {
+    const dias = Number(input.dias);
+    if (!Number.isFinite(dias) || dias < 0 || dias > 3650) throw new Error("DIAS_INVALIDO");
+    if (modo === "definir") {
+      novoFim = new Date(Date.now() + dias * 24 * 60 * 60 * 1000);
+    } else {
+      const base = emp.trialFim && emp.trialFim > new Date() ? emp.trialFim : new Date();
+      novoFim = new Date(base.getTime() + dias * 24 * 60 * 60 * 1000);
+    }
+  }
+
+  await db.update(empresas).set({ trialFim: novoFim, bloqueada: false, ativa: true }).where(eq(empresas.id, empresaId));
+  const [exist] = await db.select().from(assinaturas).where(eq(assinaturas.empresaId, empresaId)).limit(1);
+  if (exist) {
+    await db
+      .update(assinaturas)
+      .set({ status: "trial", proximoVencimento: novoFim })
+      .where(eq(assinaturas.empresaId, empresaId));
+  } else {
+    await db.insert(assinaturas).values({
+      empresaId,
+      status: "trial",
+      inicio: new Date(),
+      proximoVencimento: novoFim,
+    });
+  }
   return { trialFim: novoFim };
 }
 

@@ -299,8 +299,25 @@ export interface AdminUpdatePlanoBody {
   recursos?: string[];
 }
 
+/**
+ * adicionar = soma dias ao trial atual; definir = substitui por N dias a partir de hoje; data = define data exata de fim
+ */
+export type EstenderTrialBodyModo =
+  (typeof EstenderTrialBodyModo)[keyof typeof EstenderTrialBodyModo];
+
+export const EstenderTrialBodyModo = {
+  adicionar: "adicionar",
+  definir: "definir",
+  data: "data",
+} as const;
+
 export interface EstenderTrialBody {
-  dias: number;
+  /** adicionar = soma dias ao trial atual; definir = substitui por N dias a partir de hoje; data = define data exata de fim */
+  modo?: EstenderTrialBodyModo;
+  /** Necessário quando modo = adicionar ou definir */
+  dias?: number;
+  /** Necessário quando modo = data */
+  trialFim?: string;
 }
 
 export interface AtivarAssinaturaBody {
@@ -313,6 +330,23 @@ export interface AdminResumo {
   trial: number;
   vencidas: number;
   mrr: number;
+}
+
+export interface SistemaConfig {
+  /**
+   * @minimum 0
+   * @maximum 365
+   */
+  trialDiasPadrao: number;
+  atualizadoEm?: string | null;
+}
+
+export interface UpdateSistemaConfigBody {
+  /**
+   * @minimum 0
+   * @maximum 365
+   */
+  trialDiasPadrao?: number;
 }
 
 export type ListProdutosParams = {

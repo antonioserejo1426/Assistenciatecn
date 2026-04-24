@@ -571,7 +571,20 @@ export const AdminEstenderTrialParams = zod.object({
 });
 
 export const AdminEstenderTrialBody = zod.object({
-  dias: zod.number(),
+  modo: zod
+    .enum(["adicionar", "definir", "data"])
+    .optional()
+    .describe(
+      "adicionar = soma dias ao trial atual; definir = substitui por N dias a partir de hoje; data = define data exata de fim",
+    ),
+  dias: zod
+    .number()
+    .optional()
+    .describe("Necessário quando modo = adicionar ou definir"),
+  trialFim: zod.coerce
+    .date()
+    .optional()
+    .describe("Necessário quando modo = data"),
 });
 
 export const AdminEstenderTrialResponse = zod.object({
@@ -671,4 +684,37 @@ export const AdminResumoResponse = zod.object({
   trial: zod.number(),
   vencidas: zod.number(),
   mrr: zod.number(),
+});
+
+export const adminGetConfiguracoesResponseTrialDiasPadraoMin = 0;
+export const adminGetConfiguracoesResponseTrialDiasPadraoMax = 365;
+
+export const AdminGetConfiguracoesResponse = zod.object({
+  trialDiasPadrao: zod
+    .number()
+    .min(adminGetConfiguracoesResponseTrialDiasPadraoMin)
+    .max(adminGetConfiguracoesResponseTrialDiasPadraoMax),
+  atualizadoEm: zod.coerce.date().nullish(),
+});
+
+export const adminUpdateConfiguracoesBodyTrialDiasPadraoMin = 0;
+export const adminUpdateConfiguracoesBodyTrialDiasPadraoMax = 365;
+
+export const AdminUpdateConfiguracoesBody = zod.object({
+  trialDiasPadrao: zod
+    .number()
+    .min(adminUpdateConfiguracoesBodyTrialDiasPadraoMin)
+    .max(adminUpdateConfiguracoesBodyTrialDiasPadraoMax)
+    .optional(),
+});
+
+export const adminUpdateConfiguracoesResponseTrialDiasPadraoMin = 0;
+export const adminUpdateConfiguracoesResponseTrialDiasPadraoMax = 365;
+
+export const AdminUpdateConfiguracoesResponse = zod.object({
+  trialDiasPadrao: zod
+    .number()
+    .min(adminUpdateConfiguracoesResponseTrialDiasPadraoMin)
+    .max(adminUpdateConfiguracoesResponseTrialDiasPadraoMax),
+  atualizadoEm: zod.coerce.date().nullish(),
 });

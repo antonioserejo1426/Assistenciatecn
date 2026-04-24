@@ -660,6 +660,31 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AdminResumo" }
 
+  /admin/configuracoes:
+    get:
+      operationId: adminGetConfiguracoes
+      tags: [admin]
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SistemaConfig" }
+    patch:
+      operationId: adminUpdateConfiguracoes
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateSistemaConfigBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SistemaConfig" }
+
 components:
   schemas:
     HealthStatus:
@@ -1019,9 +1044,13 @@ components:
           items: { type: string }
     EstenderTrialBody:
       type: object
-      required: [dias]
       properties:
-        dias: { type: integer }
+        modo:
+          type: string
+          enum: [adicionar, definir, data]
+          description: "adicionar = soma dias ao trial atual; definir = substitui por N dias a partir de hoje; data = define data exata de fim"
+        dias: { type: integer, description: "Necessário quando modo = adicionar ou definir" }
+        trialFim: { type: string, format: date-time, description: "Necessário quando modo = data" }
     AtivarAssinaturaBody:
       type: object
       required: [planoId]
@@ -1036,3 +1065,13 @@ components:
         trial: { type: integer }
         vencidas: { type: integer }
         mrr: { type: number }
+    SistemaConfig:
+      type: object
+      required: [trialDiasPadrao]
+      properties:
+        trialDiasPadrao: { type: integer, minimum: 0, maximum: 365 }
+        atualizadoEm: { type: string, format: date-time, nullable: true }
+    UpdateSistemaConfigBody:
+      type: object
+      properties:
+        trialDiasPadrao: { type: integer, minimum: 0, maximum: 365 }
