@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Crown, Sparkles, CheckCircle2 } from "lucide-react";
+import { Crown, Sparkles } from "lucide-react";
+import heroImage from "@assets/IMG_0604_1777058368084.png";
 
 const registerSchema = z.object({
   empresaNome: z.string().min(2, "Nome da empresa deve ter no mínimo 2 caracteres"),
@@ -25,15 +26,6 @@ export default function Register() {
     query: { staleTime: 0, refetchOnWindowFocus: true },
   });
   const trialDias = sistemaInfo?.trialDiasPadrao ?? 7;
-  const trialLabel = trialDias > 0
-    ? `${trialDias} ${trialDias === 1 ? "dia" : "dias"} grátis, sem cartão`
-    : "Acesso premium imediato";
-  const beneficios = [
-    trialLabel,
-    "Scanner via celular em tempo real",
-    "Dashboard de lucratividade",
-    "Suporte premium em português",
-  ];
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -62,34 +54,38 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-28 relative">
-        <div className="mx-auto w-full max-w-md lg:w-[26rem] relative z-10">
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <div className="absolute inset-0">
+        <img src={heroImage} alt="TecnoFix premium" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-black/35" />
+      </div>
+      <div className="relative flex min-h-screen items-center px-4 py-12 sm:px-6 lg:px-20 xl:px-28">
+        <div className="mx-auto w-full max-w-md lg:w-[26rem] rounded-3xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-10">
             <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gold-gradient gold-ring">
               <Crown className="h-6 w-6 text-[hsl(222,47%,8%)]" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-[10px] font-semibold tracking-[0.3em] text-muted-foreground uppercase">
+              <span className="text-[10px] font-semibold tracking-[0.3em] text-white/70 uppercase">
                 Premium SaaS
               </span>
-              <span className="text-2xl font-display font-bold tracking-tight">
+              <span className="text-2xl font-display font-bold tracking-tight text-white">
                 Tecno<span className="text-gold-gradient">Fix</span>
               </span>
             </div>
           </div>
 
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[hsl(38,92%,55%)]/30 bg-[hsl(38,92%,55%)]/10 px-3 py-1 text-xs font-medium text-[hsl(28,85%,38%)]">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[hsl(38,92%,55%)]/30 bg-[hsl(38,92%,55%)]/10 px-3 py-1 text-xs font-medium text-white">
             <Sparkles className="h-3.5 w-3.5" />
             Comece agora — sem cartão
           </div>
 
-          <h2 className="mt-4 text-4xl font-display font-bold leading-tight tracking-tight text-foreground">
+          <h2 className="mt-4 text-4xl font-display font-bold leading-tight tracking-tight text-white">
             Crie sua conta premium
           </h2>
-          <p className="mt-3 text-base leading-6 text-muted-foreground">
+          <p className="mt-3 text-base leading-6 text-white/75">
             Já tem uma conta?{" "}
-            <Link href="/login" className="font-semibold text-[hsl(28,85%,42%)] hover:underline underline-offset-4">
+            <Link href="/login" className="font-semibold text-[hsl(38,92%,65%)] hover:underline underline-offset-4">
               Faça login
             </Link>
           </p>
@@ -102,13 +98,13 @@ export default function Register() {
                   name="empresaNome"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      <FormLabel className="text-xs uppercase tracking-wider text-white/75 font-semibold">
                         Nome da Assistência
                       </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Sua Assistência Celular"
-                          className="h-12 rounded-xl border-input/80 bg-card/60 px-4 text-base focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
+                          className="h-12 rounded-xl border-white/20 bg-white/10 px-4 text-base text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
                           {...field}
                         />
                       </FormControl>
@@ -122,13 +118,13 @@ export default function Register() {
                   name="nome"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      <FormLabel className="text-xs uppercase tracking-wider text-white/75 font-semibold">
                         Seu Nome
                       </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="João Silva"
-                          className="h-12 rounded-xl border-input/80 bg-card/60 px-4 text-base focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
+                          className="h-12 rounded-xl border-white/20 bg-white/10 px-4 text-base text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
                           {...field}
                         />
                       </FormControl>
@@ -142,13 +138,13 @@ export default function Register() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      <FormLabel className="text-xs uppercase tracking-wider text-white/75 font-semibold">
                         Email
                       </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="seu@email.com"
-                          className="h-12 rounded-xl border-input/80 bg-card/60 px-4 text-base focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
+                          className="h-12 rounded-xl border-white/20 bg-white/10 px-4 text-base text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
                           {...field}
                         />
                       </FormControl>
@@ -162,14 +158,14 @@ export default function Register() {
                   name="senha"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      <FormLabel className="text-xs uppercase tracking-wider text-white/75 font-semibold">
                         Senha
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="password"
                           placeholder="••••••••"
-                          className="h-12 rounded-xl border-input/80 bg-card/60 px-4 text-base focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
+                          className="h-12 rounded-xl border-white/20 bg-white/10 px-4 text-base text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
                           {...field}
                         />
                       </FormControl>
@@ -191,41 +187,6 @@ export default function Register() {
                 </Button>
               </form>
             </Form>
-          </div>
-        </div>
-      </div>
-
-      {/* Right premium panel */}
-      <div className="relative hidden w-0 flex-1 lg:block">
-        <div className="absolute inset-0 bg-onyx-gradient aurora-bg flex flex-col justify-between p-14 text-white">
-          <div className="relative z-10 flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[hsl(38,92%,70%)]">
-            <span className="inline-block h-px w-8 bg-[hsl(38,92%,55%)]" />
-            Edição Premium
-          </div>
-
-          <div className="relative z-10 max-w-xl">
-            <h2 className="font-display text-5xl font-bold leading-[1.1] tracking-tight mb-6">
-              Eleve sua assistência ao <span className="text-gold-gradient">próximo nível</span>.
-            </h2>
-            <p className="text-lg text-white/70 leading-relaxed mb-10">
-              Junte-se às oficinas que escolheram a forma premium de gerenciar OS, estoque e PDV — tudo conectado em tempo real.
-            </p>
-
-            <ul className="space-y-3">
-              {beneficios.map((b) => (
-                <li key={b} className="flex items-center gap-3 text-white/90">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(38,92%,55%)]/15 ring-1 ring-[hsl(38,92%,55%)]/40">
-                    <CheckCircle2 className="h-4 w-4 text-[hsl(38,92%,65%)]" />
-                  </span>
-                  <span className="font-medium">{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="relative z-10 text-sm text-white/50">
-            "O TecnoFix transformou como organizamos a oficina. Hoje vendemos mais e perdemos zero peça."
-            <div className="mt-2 text-white/70 font-medium">— Cliente Premium</div>
           </div>
         </div>
       </div>
