@@ -26,7 +26,7 @@ Stripe: webhook em `/api/stripe/webhook` com **raw body antes do `express.json`*
 
 Scanner: Socket.io em `/socket.io`. Sala `pdv:<sessaoId>`. PC entra com `join_pdv`, celular emite `scanner:add` ou `scanner:novo`, servidor faz broadcast.
 
-Bootstrap: super admin `antonioserejo1426@gmail.com` (senha inicial `admin123`) e 3 planos (Starter R$49,90, Profissional R$99,90, Premium R$199,90) seedados na inicialização.
+Bootstrap: super admin `antonioserejo1426@gmail.com` (senha inicial `antonioserejo90`) e 3 planos (Starter R$49,90, Profissional R$99,90, Premium R$199,90) seedados na inicialização.
 
 ## Frontend (`artifacts/celular-saas`)
 
