@@ -12,6 +12,7 @@ import {
   SidebarHeader,
   SidebarFooter,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -145,6 +146,35 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </Sidebar>
 
         <main className="flex-1 overflow-y-auto bg-background">
+          <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border/60 bg-background/85 px-4 py-3 backdrop-blur lg:px-8">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="text-foreground" />
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-gradient">
+                  <Crown className="h-4 w-4 text-[hsl(222,47%,8%)]" />
+                </div>
+                <span className="text-sm font-display font-bold tracking-tight truncate max-w-[10rem] sm:max-w-none">
+                  {empresa?.nome || "TecnoFix"}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex flex-col items-end leading-tight">
+                <span className="text-xs font-semibold truncate max-w-[12rem]">{user?.nome}</span>
+                <span className="text-[10px] text-muted-foreground truncate max-w-[12rem]">{user?.email}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={logout}
+              >
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sair</span>
+              </Button>
+            </div>
+          </header>
+
           {blocked && !location.startsWith("/assinatura") ? (
             <div className="flex h-full items-center justify-center p-6">
               <div className="card-luxe card-luxe-elevated max-w-md text-center p-10">
@@ -165,7 +195,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
           ) : (
-            <div className="h-full p-6 lg:p-8">{children}</div>
+            <div className="p-6 lg:p-8">{children}</div>
           )}
         </main>
       </div>
