@@ -13,12 +13,12 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(assinaturaRouter);
 router.use(empresaRouter);
 router.use(produtosRouter);
 router.use(vendasRouter);
 router.use(tecnicosServicosRouter);
 router.use(scannerRouter);
-router.use(assinaturaRouter);
 router.use(adminRouter);
 
 export default router;

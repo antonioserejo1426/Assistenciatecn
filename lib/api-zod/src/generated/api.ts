@@ -634,6 +634,37 @@ export const AdminUpdateUsuarioResponse = zod.object({
   ok: zod.boolean(),
 });
 
+export const AdminDeleteUsuarioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteUsuarioResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+export const AdminUpdatePlanoParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdatePlanoBody = zod.object({
+  nome: zod.string().optional(),
+  descricao: zod.string().nullish(),
+  preco: zod.number().optional(),
+  intervalo: zod.string().optional(),
+  ativo: zod.boolean().optional(),
+  recursos: zod.array(zod.string()).optional(),
+});
+
+export const AdminUpdatePlanoResponse = zod.object({
+  id: zod.number(),
+  nome: zod.string(),
+  descricao: zod.string().nullish(),
+  preco: zod.number(),
+  intervalo: zod.string(),
+  stripePriceId: zod.string().nullish(),
+  recursos: zod.array(zod.string()).optional(),
+});
+
 export const AdminResumoResponse = zod.object({
   empresas: zod.number(),
   ativas: zod.number(),

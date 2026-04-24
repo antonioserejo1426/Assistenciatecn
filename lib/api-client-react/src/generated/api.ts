@@ -18,6 +18,7 @@ import type {
 
 import type {
   AdminResumo,
+  AdminUpdatePlanoBody,
   AdminUpdateUsuarioBody,
   AdminUsuario,
   Assinatura,
@@ -3050,6 +3051,165 @@ export const useAdminUpdateUsuario = <
   TContext
 > => {
   return useMutation(getAdminUpdateUsuarioMutationOptions(options));
+};
+
+export const getAdminDeleteUsuarioUrl = (id: number) => {
+  return `/api/admin/usuarios/${id}`;
+};
+
+export const adminDeleteUsuario = async (
+  id: number,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getAdminDeleteUsuarioUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteUsuarioMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteUsuario>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteUsuario>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteUsuario"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteUsuario>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteUsuario(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteUsuarioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteUsuario>>
+>;
+
+export type AdminDeleteUsuarioMutationError = ErrorType<unknown>;
+
+export const useAdminDeleteUsuario = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteUsuario>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteUsuario>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteUsuarioMutationOptions(options));
+};
+
+export const getAdminUpdatePlanoUrl = (id: number) => {
+  return `/api/admin/planos/${id}`;
+};
+
+export const adminUpdatePlano = async (
+  id: number,
+  adminUpdatePlanoBody: AdminUpdatePlanoBody,
+  options?: RequestInit,
+): Promise<Plano> => {
+  return customFetch<Plano>(getAdminUpdatePlanoUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdatePlanoBody),
+  });
+};
+
+export const getAdminUpdatePlanoMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdatePlano>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdatePlanoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdatePlano>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdatePlanoBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdatePlano"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdatePlano>>,
+    { id: number; data: BodyType<AdminUpdatePlanoBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdatePlano(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdatePlanoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdatePlano>>
+>;
+export type AdminUpdatePlanoMutationBody = BodyType<AdminUpdatePlanoBody>;
+export type AdminUpdatePlanoMutationError = ErrorType<unknown>;
+
+export const useAdminUpdatePlano = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdatePlano>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdatePlanoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdatePlano>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdatePlanoBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdatePlanoMutationOptions(options));
 };
 
 export const getAdminResumoUrl = () => {

@@ -613,6 +613,41 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OkResponse" }
+    delete:
+      operationId: adminDeleteUsuario
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+
+  /admin/planos/{id}:
+    patch:
+      operationId: adminUpdatePlano
+      tags: [admin]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdatePlanoBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Plano" }
 
   /admin/resumo:
     get:
@@ -971,6 +1006,17 @@ components:
         email: { type: string }
         senha: { type: string }
         ativo: { type: boolean }
+    AdminUpdatePlanoBody:
+      type: object
+      properties:
+        nome: { type: string }
+        descricao: { type: string, nullable: true }
+        preco: { type: number }
+        intervalo: { type: string }
+        ativo: { type: boolean }
+        recursos:
+          type: array
+          items: { type: string }
     EstenderTrialBody:
       type: object
       required: [dias]

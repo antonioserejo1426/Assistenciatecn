@@ -9,11 +9,14 @@ import {
   useAdminAtivarAssinatura,
   useAdminListUsuariosEmpresa,
   useAdminUpdateUsuario,
+  useAdminDeleteUsuario,
   useAdminToggleBloqueioUsuario,
+  useAdminUpdatePlano,
   useListPlanos,
   getAdminListEmpresasQueryKey,
   getAdminResumoQueryKey,
   getAdminListUsuariosEmpresaQueryKey,
+  getListPlanosQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +45,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Lock, Unlock, Calendar, Sparkles, Building2, Users, AlertTriangle, DollarSign, KeyRound, UserCog } from "lucide-react";
+import { Lock, Unlock, Calendar, Sparkles, Building2, Users, AlertTriangle, DollarSign, KeyRound, UserCog, Trash2 } from "lucide-react";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -69,10 +72,17 @@ export default function AdminPage() {
 
   const toggleUsuario = useAdminToggleBloqueioUsuario();
   const updateUsuario = useAdminUpdateUsuario();
+  const deleteUsuario = useAdminDeleteUsuario();
+  const updatePlano = useAdminUpdatePlano();
   const { data: usuariosEmpresa = [], isFetching: loadingUsuarios } = useAdminListUsuariosEmpresa(
     usuariosDialog?.id ?? 0,
     { query: { enabled: !!usuariosDialog } },
   );
+
+  const [editPlano, setEditPlano] = useState<any | null>(null);
+  const [planoNome, setPlanoNome] = useState("");
+  const [planoPreco, setPlanoPreco] = useState("");
+  const [planoDescricao, setPlanoDescricao] = useState("");
 
   function refresh() {
     qc.invalidateQueries({ queryKey: getAdminListEmpresasQueryKey() });
@@ -121,6 +131,48 @@ export default function AdminPage() {
     setEditNome(u.nome ?? "");
     setEditEmail(u.email ?? "");
     setEditSenha("");
+  }
+
+  async function excluirUsuario(u: any) {
+    if (!confirm(`Excluir o usuário "${u.nome}" (${u.email})? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await deleteUsuario.mutateAsync({ id: u.id });
+      toast.success("Usuário excluído");
+      refreshUsuarios();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao excluir usuário");
+    }
+  }
+
+  function abrirEdicaoPlano(p: any) {
+    setEditPlano(p);
+    setPlanoNome(p.nome ?? "");
+    setPlanoPreco(String(p.preco ?? ""));
+    setPlanoDescricao(p.descricao ?? "");
+  }
+
+  async function salvarPlano() {
+    if (!editPlano) return;
+    const preco = Number(planoPreco.replace(",", "."));
+    if (Number.isNaN(preco) || preco < 0) {
+      toast.error("Preço inválido");
+      return;
+    }
+    try {
+      await updatePlano.mutateAsync({
+        id: editPlano.id,
+        data: {
+          nome: planoNome.trim() || editPlano.nome,
+          preco,
+          descricao: planoDescricao.trim() ? planoDescricao.trim() : null,
+        },
+      });
+      toast.success("Plano atualizado");
+      setEditPlano(null);
+      qc.invalidateQueries({ queryKey: getListPlanosQueryKey() });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao atualizar plano");
+    }
   }
 
   async function salvarEdicao() {
@@ -191,6 +243,43 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Planos & Preços</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Edite o valor dos planos. O Stripe sincroniza o novo preço para os próximos pagamentos.
+          </p>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Plano</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Preço (mês)</TableHead>
+                <TableHead className="w-[160px]">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {planos.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-medium">{p.nome}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground max-w-md truncate">
+                    {p.descricao ?? "—"}
+                  </TableCell>
+                  <TableCell className="font-semibold">{fmt(p.preco)}</TableCell>
+                  <TableCell>
+                    <Button size="sm" variant="outline" onClick={() => abrirEdicaoPlano(p)}>
+                      <KeyRound className="mr-1 h-3 w-3" /> Editar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -336,6 +425,16 @@ export default function AdminPage() {
                             {u.ativo ? <Lock className="mr-1 h-3 w-3" /> : <Unlock className="mr-1 h-3 w-3" />}
                             {u.ativo ? "Bloquear" : "Ativar"}
                           </Button>
+                          {u.role !== "super_admin" && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => excluirUsuario(u)}
+                              disabled={deleteUsuario.isPending}
+                            >
+                              <Trash2 className="mr-1 h-3 w-3" /> Excluir
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -379,6 +478,44 @@ export default function AdminPage() {
             <Button variant="outline" onClick={() => setEditUsuario(null)}>Cancelar</Button>
             <Button onClick={salvarEdicao} disabled={updateUsuario.isPending}>
               {updateUsuario.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editPlano} onOpenChange={(o) => !o && setEditPlano(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar plano</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div>
+              <Label>Nome do plano</Label>
+              <Input value={planoNome} onChange={(e) => setPlanoNome(e.target.value)} />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Input value={planoDescricao} onChange={(e) => setPlanoDescricao(e.target.value)} />
+            </div>
+            <div>
+              <Label>Preço mensal (BRL)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={planoPreco}
+                onChange={(e) => setPlanoPreco(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Ao salvar, um novo preço é criado no Stripe e o anterior é desativado. Assinantes
+                já existentes continuam com o preço antigo até a próxima cobrança/renovação.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPlano(null)}>Cancelar</Button>
+            <Button onClick={salvarPlano} disabled={updatePlano.isPending}>
+              {updatePlano.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -290,6 +290,15 @@ export interface AdminUpdateUsuarioBody {
   ativo?: boolean;
 }
 
+export interface AdminUpdatePlanoBody {
+  nome?: string;
+  descricao?: string | null;
+  preco?: number;
+  intervalo?: string;
+  ativo?: boolean;
+  recursos?: string[];
+}
+
 export interface EstenderTrialBody {
   dias: number;
 }
