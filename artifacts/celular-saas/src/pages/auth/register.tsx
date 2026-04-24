@@ -55,9 +55,9 @@ export default function Register() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
-      <div className="absolute inset-0">
-        <img src={heroImage} alt="TecnoFix premium" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-black/35" />
+      <div className="absolute inset-0 bg-[#0b0b0d]">
+        <img src={heroImage} alt="TecnoFix premium" className="h-full w-full object-contain" />
+        <div className="absolute inset-0 bg-black/40" />
       </div>
       <div className="relative flex min-h-screen items-center px-4 py-12 sm:px-6 lg:px-20 xl:px-28">
         <div className="mx-auto w-full max-w-md lg:w-[26rem] rounded-3xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
