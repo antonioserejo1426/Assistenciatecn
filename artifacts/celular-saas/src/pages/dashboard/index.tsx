@@ -33,7 +33,7 @@ function greeting() {
 }
 
 export default function Dashboard() {
-  const { user, empresa, assinaturaStatus } = useAuth();
+  const { user, empresa } = useAuth();
   const { data: resumo, isLoading: isLoadingResumo } = useDashboardResumo();
   const { data: vendasRecentes, isLoading: isLoadingVendas } = useDashboardVendasRecentes();
   const { data: topProdutos, isLoading: isLoadingTop } = useDashboardTopProdutos();
@@ -60,9 +60,7 @@ export default function Dashboard() {
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-[hsl(38,92%,55%)]/30 bg-[hsl(38,92%,55%)]/10 px-3 py-1 text-xs font-medium text-[hsl(28,85%,38%)]">
                 <Sparkles className="h-3.5 w-3.5" />
-                {assinaturaStatus === "trial"
-                  ? "Você está no plano Trial Premium"
-                  : "Conta Premium ativa"}
+                Conta Premium ativa
               </div>
               <h1 className="mt-4 font-display text-4xl lg:text-5xl font-bold tracking-tight">
                 {greeting()}, <span className="text-gold-gradient">{primeiroNome || "bem-vindo"}</span>!

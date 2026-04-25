@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   useRegister,
-  useSistemaGetInfo,
   useListPlanos,
   useCreateCheckout,
 } from "@workspace/api-client-react";
@@ -35,15 +34,11 @@ export default function Register() {
   const { setToken } = useAuth();
   const registerMutation = useRegister();
   const checkoutMutation = useCreateCheckout();
-  const { data: sistemaInfo } = useSistemaGetInfo({
-    query: { staleTime: 0, refetchOnWindowFocus: true },
-  });
   const { data: planos = [] } = useListPlanos();
   const planoSelecionado =
     planoIdSelecionado != null
       ? planos.find((p) => p.id === planoIdSelecionado) ?? null
       : null;
-  const trialDias = sistemaInfo?.trialDiasPadrao ?? 7;
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -66,18 +61,14 @@ export default function Register() {
               return;
             } catch {
               toast.error(
-                "Conta criada, mas não foi possível abrir o pagamento. Você está no período de teste — é só ir em Assinatura para ativar o plano.",
+                "Conta criada, mas não foi possível abrir o pagamento. Vá em Assinatura para finalizar o pagamento e liberar o acesso.",
               );
-              setLocation("/");
+              setLocation("/assinatura");
               return;
             }
           }
-          toast.success(
-            trialDias > 0
-              ? `Bem-vindo ao TecnoFix! Seus ${trialDias} ${trialDias === 1 ? "dia" : "dias"} grátis começam agora.`
-              : "Bem-vindo ao TecnoFix!",
-          );
-          setLocation("/");
+          toast.success("Conta criada! Escolha um plano para ativar seu acesso.");
+          setLocation("/assinatura");
         },
         onError: (error) => {
           toast.error("Erro ao criar conta. Verifique os dados e tente novamente.");
@@ -111,7 +102,7 @@ export default function Register() {
 
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[hsl(38,92%,55%)]/30 bg-[hsl(38,92%,55%)]/10 px-3 py-1 text-xs font-medium text-white">
             <Sparkles className="h-3.5 w-3.5" />
-            {planoSelecionado ? `Plano ${planoSelecionado.nome} selecionado` : "Comece agora — sem cartão"}
+            {planoSelecionado ? `Plano ${planoSelecionado.nome} selecionado` : "Crie sua conta e escolha seu plano"}
           </div>
 
           <h2 className="mt-4 text-4xl font-display font-bold leading-tight tracking-tight text-white">
@@ -255,8 +246,8 @@ export default function Register() {
                 >
                   {registerMutation.isPending
                     ? "Criando sua conta..."
-                    : trialDias > 0
-                      ? `Começar ${trialDias} ${trialDias === 1 ? "dia" : "dias"} premium`
+                    : planoSelecionado
+                      ? `Criar conta e ir para o pagamento`
                       : "Criar conta premium"}
                 </Button>
               </form>

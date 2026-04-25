@@ -76,9 +76,6 @@ router.get("/auth/me", requireAuth, async (req, res) => {
       const { getAssinaturaEmpresa } = await import("../services/assinaturaService");
       const a = await getAssinaturaEmpresa(emp.id);
       assinaturaStatus = a?.status ?? null;
-      if (a?.status === "trial" && emp.trialFim && emp.trialFim < new Date()) {
-        assinaturaStatus = "vencida";
-      }
     }
   }
   const { getEmpresaFeatures } = await import("../services/featureService");

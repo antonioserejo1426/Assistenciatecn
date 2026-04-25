@@ -42,7 +42,7 @@ function ProtectedRoute({ component: Component, adminOnly = false, publicFallbac
 
   const isSuperAdmin = user.role === "super_admin";
   const empresaBloqueada = !!empresa?.bloqueada || empresa?.ativa === false;
-  const semAssinaturaValida = assinaturaStatus !== "trial" && assinaturaStatus !== "ativa";
+  const semAssinaturaValida = assinaturaStatus !== "ativa";
   const liberadoNaRota = rest.path === "/assinatura" || rest.path === "/configuracoes";
 
   if (!isSuperAdmin && empresaBloqueada) {
@@ -60,9 +60,9 @@ function ProtectedRoute({ component: Component, adminOnly = false, publicFallbac
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
-          <h2 className="text-2xl font-bold">Assinatura Vencida</h2>
-          <p>Sua assinatura está inativa. Por favor, regularize seu pagamento para continuar usando o sistema.</p>
-          <a href="/assinatura" className="px-4 py-2 bg-primary text-primary-foreground rounded-md">Ir para Assinatura</a>
+          <h2 className="text-2xl font-bold">Assinatura necessária</h2>
+          <p>Para usar o TecnoFix é preciso ter uma assinatura ativa. Escolha um plano e finalize o pagamento para liberar o acesso.</p>
+          <a href="/assinatura" className="px-4 py-2 bg-primary text-primary-foreground rounded-md">Ver planos e assinar</a>
         </div>
       </AppLayout>
     );

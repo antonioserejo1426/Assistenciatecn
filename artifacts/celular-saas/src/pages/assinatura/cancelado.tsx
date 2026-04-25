@@ -9,7 +9,7 @@ export default function AssinaturaCancelado() {
         <XCircle className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
         <h1 className="mb-2 text-2xl font-bold">Pagamento cancelado</h1>
         <p className="mb-6 text-muted-foreground">
-          Você pode tentar novamente quando quiser. Seu trial continua ativo.
+          Sua assinatura ainda não foi ativada. Você pode tentar novamente quando quiser — o acesso ao sistema é liberado assim que o pagamento for confirmado.
         </p>
         <Button asChild>
           <Link href="/assinatura">Voltar para planos</Link>

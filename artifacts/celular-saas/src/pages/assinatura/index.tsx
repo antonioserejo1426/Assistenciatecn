@@ -21,7 +21,7 @@ export default function AssinaturaPage() {
 
   async function assinar(planoId: number) {
     try {
-      const r = await checkout.mutateAsync({ data: { planoId, pularTrial: true } });
+      const r = await checkout.mutateAsync({ data: { planoId } });
       window.location.href = r.url;
     } catch (e) {
       toast.error("Não foi possível iniciar o checkout. Configure o Stripe primeiro.");
@@ -40,9 +40,16 @@ export default function AssinaturaPage() {
   const statusBadgeColor =
     assinatura?.status === "ativa"
       ? "bg-emerald-500"
-      : assinatura?.status === "trial"
-        ? "bg-blue-500"
+      : assinatura?.status === "pendente"
+        ? "bg-amber-500"
         : "bg-destructive";
+
+  const statusLabel =
+    assinatura?.status === "ativa"
+      ? "Ativa"
+      : assinatura?.status === "pendente"
+        ? "Aguardando pagamento"
+        : assinatura?.status ?? "Sem assinatura";
 
   return (
     <div className="space-y-6">
@@ -60,8 +67,8 @@ export default function AssinaturaPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-3">
-            <Badge className={statusBadgeColor + " text-white capitalize"}>
-              {assinatura?.status ?? "—"}
+            <Badge className={statusBadgeColor + " text-white"}>
+              {statusLabel}
             </Badge>
             <span className="text-lg font-semibold">{assinatura?.plano?.nome ?? "Sem plano"}</span>
           </div>

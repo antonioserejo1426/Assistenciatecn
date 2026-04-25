@@ -16,13 +16,13 @@ Stack: pnpm monorepo (TypeScript), Express + PostgreSQL/Drizzle no backend, Reac
 Estrutura: `routes/` (Express), `services/` (regra de negócio), `lib/` (auth, socket, stripe, logger).
 
 Schema Drizzle (`lib/db/src/schema/`):
-- `empresas` (multi-tenancy + trial), `usuarios` (bcrypt), `planos`, `assinaturas` (Stripe).
+- `empresas` (multi-tenancy), `usuarios` (bcrypt), `planos`, `assinaturas` (Stripe). Colunas `trialFim`/`trialDiasPadrao` permanecem no schema mas não são mais utilizadas (trial removido — pagamento obrigatório antes do uso).
 - `produtos` com `codigoBarras` único por empresa, `estoque_movimentacoes`, `vendas` + `venda_itens`.
 - `tecnicos`, `servicos` (kanban OS), `servico_pecas`. `admin_master` para super_admin.
 
 Auth (`lib/auth.ts`): JWT 30d, `requireAuth`, `requireActiveSubscription`, `requireSuperAdmin`.
 
-Stripe: webhook em `/api/stripe/webhook` com **raw body antes do `express.json`** (`app.ts`). Sync de planos→prices no boot. Checkout com trial 7d via `STRIPE_TRIAL_DAYS`.
+Stripe: webhook em `/api/stripe/webhook` com **raw body antes do `express.json`** (`app.ts`). Sync de planos→prices no boot. Checkout sem trial — empresa nasce com `assinaturaStatus="pendente"` e só ganha `features` após pagamento confirmado (`status="ativa"`).
 
 Scanner: Socket.io em `/socket.io`. Sala `pdv:<sessaoId>`. PC entra com `join_pdv`, celular emite `scanner:add` ou `scanner:novo`, servidor faz broadcast.
 

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useListPlanos, useSistemaGetInfo } from "@workspace/api-client-react";
+import { useListPlanos } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import {
   Crown,
@@ -54,14 +54,7 @@ const depoimentos: Depoimento[] = [
 
 export default function Landing() {
   const { data: planos = [] } = useListPlanos();
-  const { data: sistemaInfo } = useSistemaGetInfo({
-    query: { staleTime: 0, refetchOnWindowFocus: true },
-  });
-  const trialDias = sistemaInfo?.trialDiasPadrao ?? 0;
-  const trialLabel =
-    trialDias > 0
-      ? `${trialDias} ${trialDias === 1 ? "dia" : "dias"} grátis para testar`
-      : "Comece com o plano que combina com sua loja";
+  const heroLabel = "Escolha o plano que combina com sua loja";
 
   const planoMaisPopularId = planos.length >= 2 ? planos[1]?.id : planos[0]?.id;
 
@@ -102,7 +95,7 @@ export default function Landing() {
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 pb-20 pt-24 text-center sm:pt-32 lg:pb-32 lg:pt-40">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[hsl(38,92%,55%)]/30 bg-[hsl(38,92%,55%)]/10 px-4 py-1.5 text-xs font-medium text-white">
-            <Sparkles className="h-3.5 w-3.5" /> {trialLabel}
+            <Sparkles className="h-3.5 w-3.5" /> {heroLabel}
           </div>
           <h1 className="mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
             A plataforma <span className="text-gold-gradient">premium</span>
@@ -157,10 +150,7 @@ export default function Landing() {
               Escolha o plano e crie sua conta
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-white/70">
-              Você seleciona o plano, cadastra sua empresa e começa a usar.
-              {trialDias > 0
-                ? ` Se preferir, comece pelo período de teste de ${trialDias} ${trialDias === 1 ? "dia" : "dias"} sem cobrança.`
-                : ""}
+              Você seleciona o plano, cadastra sua empresa, finaliza o pagamento e o acesso é liberado na hora.
             </p>
           </div>
 
@@ -210,17 +200,6 @@ export default function Landing() {
             })}
           </div>
 
-          {trialDias > 0 && (
-            <div className="mt-8 text-center text-sm text-white/60">
-              Quer só experimentar antes?{" "}
-              <Link
-                href="/registro"
-                className="font-semibold text-[hsl(38,92%,65%)] hover:underline"
-              >
-                Começar com {trialDias} {trialDias === 1 ? "dia" : "dias"} grátis
-              </Link>
-            </div>
-          )}
         </div>
       </section>
 

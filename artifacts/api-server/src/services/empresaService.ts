@@ -3,7 +3,6 @@ import { eq } from "drizzle-orm";
 import { hashPassword, signToken, SUPER_ADMIN_EMAIL } from "../lib/auth";
 import { stripe } from "../lib/stripe";
 import { logger } from "../lib/logger";
-import { getTrialDiasPadrao } from "./assinaturaService";
 
 export async function ensureSuperAdmin(): Promise<void> {
   const [existing] = await db
@@ -132,9 +131,6 @@ export async function registerEmpresa(input: {
     throw new Error("EMAIL_JA_USADO");
   }
 
-  const trialDias = await getTrialDiasPadrao();
-  const trialFim = new Date(Date.now() + trialDias * 24 * 60 * 60 * 1000);
-
   let stripeCustomerId: string | null = null;
   if (stripe) {
     try {
@@ -155,7 +151,7 @@ export async function registerEmpresa(input: {
       nome: input.empresaNome,
       ativa: true,
       bloqueada: false,
-      trialFim,
+      trialFim: null,
       stripeCustomerId,
     })
     .returning();
@@ -180,9 +176,9 @@ export async function registerEmpresa(input: {
 
   await db.insert(assinaturas).values({
     empresaId: empresa.id,
-    status: "trial",
+    status: "pendente",
     inicio: new Date(),
-    proximoVencimento: trialFim,
+    proximoVencimento: null,
   });
 
   const token = signToken({ userId: user.id, empresaId: user.empresaId, role: user.role });

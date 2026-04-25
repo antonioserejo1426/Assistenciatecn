@@ -4,35 +4,31 @@ import type Stripe from "stripe";
 import { stripe } from "../lib/stripe";
 import { logger } from "../lib/logger";
 
-const FALLBACK_TRIAL_DAYS = Number(process.env["STRIPE_TRIAL_DAYS"] ?? "7");
-
 export async function getSistemaConfig() {
   const [cfg] = await db.select().from(sistemaConfig).limit(1);
-  if (cfg) return cfg;
+  if (cfg) {
+    if (cfg.trialDiasPadrao !== 0) {
+      await db
+        .update(sistemaConfig)
+        .set({ trialDiasPadrao: 0, atualizadoEm: new Date() })
+        .where(eq(sistemaConfig.id, cfg.id));
+      return { ...cfg, trialDiasPadrao: 0 };
+    }
+    return cfg;
+  }
   const [novo] = await db
     .insert(sistemaConfig)
-    .values({ trialDiasPadrao: FALLBACK_TRIAL_DAYS })
+    .values({ trialDiasPadrao: 0 })
     .returning();
   return novo!;
 }
 
 export async function getTrialDiasPadrao(): Promise<number> {
-  const cfg = await getSistemaConfig();
-  return cfg.trialDiasPadrao;
+  return 0;
 }
 
-export async function updateSistemaConfig(input: { trialDiasPadrao?: number }) {
-  const cfg = await getSistemaConfig();
-  const updates: Record<string, unknown> = { atualizadoEm: new Date() };
-  if (typeof input.trialDiasPadrao === "number") {
-    if (input.trialDiasPadrao < 0 || input.trialDiasPadrao > 365) {
-      throw new Error("DIAS_INVALIDO");
-    }
-    updates["trialDiasPadrao"] = input.trialDiasPadrao;
-  }
-  await db.update(sistemaConfig).set(updates).where(eq(sistemaConfig.id, cfg.id));
-  const [atual] = await db.select().from(sistemaConfig).where(eq(sistemaConfig.id, cfg.id)).limit(1);
-  return atual!;
+export async function updateSistemaConfig(_input: { trialDiasPadrao?: number }) {
+  return getSistemaConfig();
 }
 
 export async function listPlanos() {
@@ -88,7 +84,7 @@ export async function criarCheckout(
   empresaId: number,
   planoId: number,
   origin: string,
-  pularTrial = false,
+  _pularTrial = false,
 ): Promise<{ url: string }> {
   if (!stripe) throw new Error("STRIPE_NAO_CONFIGURADO");
   const [empresa] = await db.select().from(empresas).where(eq(empresas.id, empresaId)).limit(1);
@@ -106,9 +102,6 @@ export async function criarCheckout(
   const subscriptionData: Record<string, unknown> = {
     metadata: { empresaId: String(empresaId), planoId: String(planoId) },
   };
-  if (!pularTrial) {
-    subscriptionData["trial_period_days"] = await getTrialDiasPadrao();
-  }
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -145,7 +138,7 @@ export async function processarWebhook(event: { type: string; data: { object: Re
     const planoId = Number(meta["planoId"]);
     const subscriptionId = sess["subscription"] as string | undefined;
     if (empresaId && planoId) {
-      await upsertAssinatura(empresaId, planoId, subscriptionId, "trial");
+      await upsertAssinatura(empresaId, planoId, subscriptionId, "pendente");
     }
   }
   if (event.type === "invoice.payment_succeeded") {
@@ -185,13 +178,13 @@ export async function processarWebhook(event: { type: string; data: { object: Re
     const status = sub["status"] as string;
     const periodEnd = sub["current_period_end"] as number | undefined;
     const novoStatus =
-      status === "active" || status === "trialing"
-        ? status === "trialing"
-          ? "trial"
-          : "ativa"
-        : status === "canceled"
-          ? "cancelada"
-          : "vencida";
+      status === "active"
+        ? "ativa"
+        : status === "trialing"
+          ? "pendente"
+          : status === "canceled"
+            ? "cancelada"
+            : "vencida";
     await db
       .update(assinaturas)
       .set({

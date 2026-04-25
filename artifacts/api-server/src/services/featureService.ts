@@ -1,4 +1,4 @@
-import { db, planos, assinaturas, empresas } from "@workspace/db";
+import { db, planos, assinaturas } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 export type FeatureCode =
@@ -56,28 +56,15 @@ export async function getEmpresaFeatures(
   if (role === "super_admin") return ALL_FEATURES;
   if (!empresaId) return [];
 
-  const [empresa] = await db
-    .select()
-    .from(empresas)
-    .where(eq(empresas.id, empresaId))
-    .limit(1);
-  if (!empresa) return [];
-
   const [assinatura] = await db
     .select()
     .from(assinaturas)
     .where(eq(assinaturas.empresaId, empresaId))
     .limit(1);
   if (!assinatura) return [];
-
-  if (assinatura.status === "trial") {
-    const trialAtivo = empresa.trialFim ? empresa.trialFim > new Date() : false;
-    return trialAtivo ? ALL_FEATURES : [];
-  }
-
   if (assinatura.status !== "ativa") return [];
-
   if (!assinatura.planoId) return [];
+
   const [plano] = await db
     .select()
     .from(planos)

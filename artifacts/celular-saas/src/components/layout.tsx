@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { useSistemaGetInfo } from "@workspace/api-client-react";
 import {
   Sidebar,
   SidebarContent,
@@ -34,21 +33,17 @@ import { Button } from "@/components/ui/button";
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, empresa, assinaturaStatus, hasFeature, logout } = useAuth();
   const [location] = useLocation();
-  const { data: sistemaInfo } = useSistemaGetInfo({
-    query: { staleTime: 0, refetchOnWindowFocus: true },
-  });
-  const trialDias = sistemaInfo?.trialDiasPadrao ?? 7;
 
   const isActive = (path: string) => location === path;
 
   const isSuperAdmin = user?.role === "super_admin";
   const empresaBloqueada = !!empresa?.bloqueada || empresa?.ativa === false;
   const blocked =
-    !isSuperAdmin && (empresaBloqueada || (assinaturaStatus !== "ativa" && assinaturaStatus !== "trial"));
+    !isSuperAdmin && (empresaBloqueada || assinaturaStatus !== "ativa");
 
   const statusLabel: Record<string, string> = {
     ativa: "Ativa",
-    trial: trialDias > 0 ? `Trial ${trialDias} ${trialDias === 1 ? "dia" : "dias"}` : "Trial",
+    pendente: "Aguardando pagamento",
     vencida: "Vencida",
     cancelada: "Cancelada",
   };
@@ -56,7 +51,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const statusColor =
     assinaturaStatus === "ativa"
       ? "bg-emerald-400"
-      : assinaturaStatus === "trial"
+      : assinaturaStatus === "pendente"
         ? "bg-[hsl(38,92%,55%)]"
         : "bg-rose-500";
 

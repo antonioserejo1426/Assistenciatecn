@@ -5,20 +5,16 @@ import {
   useAdminResumo,
   useAdminListEmpresas,
   useAdminToggleBloqueioEmpresa,
-  useAdminEstenderTrial,
   useAdminAtivarAssinatura,
   useAdminListUsuariosEmpresa,
   useAdminUpdateUsuario,
   useAdminDeleteUsuario,
   useAdminToggleBloqueioUsuario,
   useAdminUpdatePlano,
-  useAdminGetConfiguracoes,
-  useAdminUpdateConfiguracoes,
   useListPlanos,
   getAdminListEmpresasQueryKey,
   getAdminResumoQueryKey,
   getAdminListUsuariosEmpresaQueryKey,
-  getAdminGetConfiguracoesQueryKey,
   getListPlanosQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +44,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Lock, Unlock, Calendar, Sparkles, Building2, Users, AlertTriangle, DollarSign, KeyRound, UserCog, Trash2, Settings2, Save, Plus, RotateCcw, CalendarClock } from "lucide-react";
+import { Lock, Unlock, Sparkles, Building2, AlertTriangle, DollarSign, KeyRound, UserCog, Trash2 } from "lucide-react";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -59,13 +55,8 @@ export default function AdminPage() {
   const { data: empresas = [] } = useAdminListEmpresas();
   const { data: planos = [] } = useListPlanos();
   const toggle = useAdminToggleBloqueioEmpresa();
-  const estender = useAdminEstenderTrial();
   const ativar = useAdminAtivarAssinatura();
 
-  const [trialDialog, setTrialDialog] = useState<{ id: number; nome: string; trialFim?: string | null } | null>(null);
-  const [trialModo, setTrialModo] = useState<"adicionar" | "definir" | "data">("adicionar");
-  const [trialDias, setTrialDias] = useState("7");
-  const [trialData, setTrialData] = useState("");
   const [ativarDialog, setAtivarDialog] = useState<number | null>(null);
   const [ativarPlanoId, setAtivarPlanoId] = useState("");
   const [ativarDias, setAtivarDias] = useState("30");
@@ -79,13 +70,6 @@ export default function AdminPage() {
   const updateUsuario = useAdminUpdateUsuario();
   const deleteUsuario = useAdminDeleteUsuario();
   const updatePlano = useAdminUpdatePlano();
-  const { data: sistemaConfig } = useAdminGetConfiguracoes();
-  const updateSistema = useAdminUpdateConfiguracoes();
-  const [trialPadrao, setTrialPadrao] = useState("");
-
-  useEffect(() => {
-    if (sistemaConfig) setTrialPadrao(String(sistemaConfig.trialDiasPadrao));
-  }, [sistemaConfig]);
   const { data: usuariosEmpresa = [], isFetching: loadingUsuarios } = useAdminListUsuariosEmpresa(
     usuariosDialog?.id ?? 0,
     { query: { enabled: !!usuariosDialog } },
@@ -105,69 +89,6 @@ export default function AdminPage() {
     await toggle.mutateAsync({ id, data: { bloqueada } });
     toast.success(bloqueada ? "Empresa bloqueada" : "Empresa desbloqueada");
     refresh();
-  }
-
-  function abrirTrialDialog(empresa: { id: number; nome: string; trialFim?: string | null }) {
-    setTrialDialog({ id: empresa.id, nome: empresa.nome, trialFim: empresa.trialFim ?? null });
-    setTrialModo("adicionar");
-    setTrialDias("7");
-    const base = empresa.trialFim ? new Date(empresa.trialFim) : new Date(Date.now() + 7 * 86400000);
-    setTrialData(base.toISOString().slice(0, 10));
-  }
-
-  async function aplicarTrial() {
-    if (!trialDialog) return;
-    try {
-      const data: Record<string, unknown> = { modo: trialModo };
-      if (trialModo === "data") {
-        if (!trialData) {
-          toast.error("Informe a data de fim do trial.");
-          return;
-        }
-        const d = new Date(trialData + "T23:59:59");
-        if (Number.isNaN(d.getTime())) {
-          toast.error("Data inválida.");
-          return;
-        }
-        data["trialFim"] = d.toISOString();
-      } else {
-        const dias = Number(trialDias);
-        if (!Number.isFinite(dias) || dias < 0) {
-          toast.error("Quantidade de dias inválida.");
-          return;
-        }
-        data["dias"] = dias;
-      }
-      await estender.mutateAsync({ id: trialDialog.id, data });
-      toast.success(
-        trialModo === "data"
-          ? "Data do trial atualizada."
-          : trialModo === "definir"
-            ? "Trial reiniciado com nova duração."
-            : "Trial estendido com sucesso.",
-      );
-      setTrialDialog(null);
-      refresh();
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao atualizar trial.");
-    }
-  }
-
-  async function salvarTrialPadrao() {
-    const dias = Number(trialPadrao);
-    if (!Number.isFinite(dias) || dias < 0 || dias > 365) {
-      toast.error("Informe um valor entre 0 e 365 dias.");
-      return;
-    }
-    try {
-      await updateSistema.mutateAsync({ data: { trialDiasPadrao: dias } });
-      toast.success(`Trial padrão atualizado para ${dias} dia${dias === 1 ? "" : "s"}.`);
-      qc.invalidateQueries({ queryKey: getAdminGetConfiguracoesQueryKey() });
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao salvar configuração.");
-    }
   }
 
   async function aplicarAtivar() {
@@ -278,7 +199,7 @@ export default function AdminPage() {
         <p className="text-sm text-muted-foreground">Gestão de todas as empresas TecnoFix</p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Building2 className="h-3 w-3" /> Empresas</div>
@@ -289,12 +210,6 @@ export default function AdminPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Sparkles className="h-3 w-3" /> Ativas</div>
             <div className="text-2xl font-bold text-emerald-600">{resumo?.ativas ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Users className="h-3 w-3" /> Em trial</div>
-            <div className="text-2xl font-bold text-blue-600">{resumo?.trial ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -310,51 +225,6 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card className="card-luxe card-luxe-elevated overflow-hidden">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(38,92%,92%)] to-[hsl(38,92%,82%)] text-[hsl(28,85%,38%)] ring-1 ring-[hsl(38,92%,55%)]/25">
-              <Settings2 className="h-4 w-4" />
-            </div>
-            <div>
-              <CardTitle className="font-display">Configurações do sistema</CardTitle>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Define o comportamento padrão para novas empresas que se cadastram.
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end max-w-2xl">
-            <div className="grid gap-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                Dias de trial gratuito ao se cadastrar
-              </Label>
-              <Input
-                type="number"
-                min="0"
-                max="365"
-                value={trialPadrao}
-                onChange={(e) => setTrialPadrao(e.target.value)}
-                className="h-11 rounded-xl"
-              />
-              <p className="text-xs text-muted-foreground">
-                Toda empresa nova começa com esse período. Você pode ajustar individualmente cada empresa
-                depois pelo botão <strong>Trial</strong> na tabela abaixo.
-              </p>
-            </div>
-            <Button
-              onClick={salvarTrialPadrao}
-              disabled={updateSistema.isPending}
-              className="btn-luxe rounded-xl h-11 px-5 font-semibold"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {updateSistema.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -431,9 +301,6 @@ export default function AdminPage() {
                         {e.bloqueada ? <Unlock className="mr-1 h-3 w-3" /> : <Lock className="mr-1 h-3 w-3" />}
                         {e.bloqueada ? "Desbloquear" : "Bloquear"}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => abrirTrialDialog(e)}>
-                        <Calendar className="mr-1 h-3 w-3" /> Trial
-                      </Button>
                       <Button size="sm" variant="outline" onClick={() => { setAtivarDialog(e.id); setAtivarPlanoId(""); setAtivarDias("30"); }}>
                         <Sparkles className="mr-1 h-3 w-3" /> Ativar
                       </Button>
@@ -448,96 +315,6 @@ export default function AdminPage() {
           </Table>
         </CardContent>
       </Card>
-
-      <Dialog open={!!trialDialog} onOpenChange={(o) => !o && setTrialDialog(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Gerenciar trial — {trialDialog?.nome}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            {trialDialog?.trialFim && (
-              <div className="rounded-lg border bg-muted/30 px-3 py-2 text-sm">
-                <span className="text-muted-foreground">Trial atual termina em: </span>
-                <span className="font-semibold">
-                  {new Date(trialDialog.trialFim).toLocaleString("pt-BR")}
-                </span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setTrialModo("adicionar")}
-                className={`rounded-lg border p-3 text-left text-xs transition ${
-                  trialModo === "adicionar"
-                    ? "border-[hsl(38,92%,55%)] bg-[hsl(38,92%,55%)]/10 ring-1 ring-[hsl(38,92%,55%)]/30"
-                    : "hover:bg-muted/50"
-                }`}
-              >
-                <Plus className="mb-1 h-4 w-4" />
-                <div className="font-semibold">Adicionar</div>
-                <div className="text-muted-foreground text-[11px] mt-0.5">Soma dias ao trial atual</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTrialModo("definir")}
-                className={`rounded-lg border p-3 text-left text-xs transition ${
-                  trialModo === "definir"
-                    ? "border-[hsl(38,92%,55%)] bg-[hsl(38,92%,55%)]/10 ring-1 ring-[hsl(38,92%,55%)]/30"
-                    : "hover:bg-muted/50"
-                }`}
-              >
-                <RotateCcw className="mb-1 h-4 w-4" />
-                <div className="font-semibold">Reiniciar</div>
-                <div className="text-muted-foreground text-[11px] mt-0.5">N dias a partir de hoje</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTrialModo("data")}
-                className={`rounded-lg border p-3 text-left text-xs transition ${
-                  trialModo === "data"
-                    ? "border-[hsl(38,92%,55%)] bg-[hsl(38,92%,55%)]/10 ring-1 ring-[hsl(38,92%,55%)]/30"
-                    : "hover:bg-muted/50"
-                }`}
-              >
-                <CalendarClock className="mb-1 h-4 w-4" />
-                <div className="font-semibold">Data exata</div>
-                <div className="text-muted-foreground text-[11px] mt-0.5">Escolher o dia de fim</div>
-              </button>
-            </div>
-
-            {trialModo === "data" ? (
-              <div className="grid gap-2">
-                <Label>Data de fim do trial</Label>
-                <Input type="date" value={trialData} onChange={(e) => setTrialData(e.target.value)} />
-                <p className="text-xs text-muted-foreground">A empresa terá acesso até o final desse dia.</p>
-              </div>
-            ) : (
-              <div className="grid gap-2">
-                <Label>Quantidade de dias</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="365"
-                  value={trialDias}
-                  onChange={(e) => setTrialDias(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {trialModo === "adicionar"
-                    ? "Esses dias serão somados ao fim do trial atual (ou contam a partir de hoje se já expirou)."
-                    : "O trial será reiniciado e expira N dias a partir de agora."}
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTrialDialog(null)}>Cancelar</Button>
-            <Button onClick={aplicarTrial} disabled={estender.isPending} className="btn-luxe">
-              {estender.isPending ? "Salvando..." : "Aplicar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!ativarDialog} onOpenChange={(o) => !o && setAtivarDialog(null)}>
         <DialogContent>

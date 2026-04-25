@@ -93,17 +93,6 @@ export async function requireActiveSubscription(
 
   if (!assinatura) return res.status(403).json({ error: "sem_assinatura" });
 
-  const now = new Date();
-  if (assinatura.status === "trial") {
-    if (empresa.trialFim && empresa.trialFim < now) {
-      await db
-        .update(assinaturas)
-        .set({ status: "cancelada" })
-        .where(eq(assinaturas.id, assinatura.id));
-      return res.status(402).json({ error: "trial_expirado" });
-    }
-    return next();
-  }
   if (assinatura.status === "ativa") return next();
 
   return res.status(402).json({ error: "assinatura_inativa", status: assinatura.status });
