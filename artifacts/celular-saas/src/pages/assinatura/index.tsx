@@ -19,9 +19,9 @@ export default function AssinaturaPage() {
   const checkout = useCreateCheckout();
   const portal = useCreatePortal();
 
-  async function assinar(planoId: number, pularTrial = false) {
+  async function assinar(planoId: number) {
     try {
-      const r = await checkout.mutateAsync({ data: { planoId, pularTrial } });
+      const r = await checkout.mutateAsync({ data: { planoId, pularTrial: true } });
       window.location.href = r.url;
     } catch (e) {
       toast.error("Não foi possível iniciar o checkout. Configure o Stripe primeiro.");
@@ -109,26 +109,14 @@ export default function AssinaturaPage() {
                       </li>
                     ))}
                   </ul>
-                  <div className="space-y-2">
-                    <Button
-                      className="w-full"
-                      variant={ativo ? "outline" : "default"}
-                      onClick={() => assinar(p.id, false)}
-                      disabled={checkout.isPending || ativo}
-                    >
-                      {ativo ? "Plano ativo" : "Assinar (com trial)"}
-                    </Button>
-                    {!ativo && (
-                      <Button
-                        className="w-full"
-                        variant="secondary"
-                        onClick={() => assinar(p.id, true)}
-                        disabled={checkout.isPending}
-                      >
-                        Pagar agora (sem trial)
-                      </Button>
-                    )}
-                  </div>
+                  <Button
+                    className="w-full"
+                    variant={ativo ? "outline" : "default"}
+                    onClick={() => assinar(p.id)}
+                    disabled={checkout.isPending || ativo}
+                  >
+                    {ativo ? "Plano ativo" : "Assinar agora"}
+                  </Button>
                 </CardContent>
               </Card>
             );
