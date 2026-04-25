@@ -31,62 +31,79 @@ export async function ensureSuperAdmin(): Promise<void> {
   logger.info({ email: SUPER_ADMIN_EMAIL }, "super_admin criado");
 }
 
+const SEED_PLANOS = [
+  {
+    nome: "Starter",
+    descricao: "Para lojas começando — 1 usuário, controle de estoque e PDV",
+    preco: "0.50",
+    intervalo: "mes",
+    recursos: JSON.stringify([
+      "1 usuário",
+      "Estoque ilimitado",
+      "PDV completo",
+      "Scanner via celular",
+    ]),
+    features: JSON.stringify([]),
+    ativo: true,
+  },
+  {
+    nome: "Profissional",
+    descricao: "Para oficinas em crescimento — múltiplos usuários e técnicos",
+    preco: "0.50",
+    intervalo: "mes",
+    recursos: JSON.stringify([
+      "Usuários ilimitados",
+      "Gestão de técnicos e serviços",
+      "Dashboard de lucratividade",
+      "Scanner via celular",
+      "Suporte prioritário",
+    ]),
+    features: JSON.stringify(["tecnicos", "servicos", "lucratividade"]),
+    ativo: true,
+  },
+  {
+    nome: "Premium",
+    descricao: "Para redes — relatórios avançados e múltiplas filiais",
+    preco: "0.50",
+    intervalo: "mes",
+    recursos: JSON.stringify([
+      "Tudo do Profissional",
+      "Múltiplas filiais",
+      "Relatórios avançados",
+      "API completa",
+      "Suporte 24/7",
+    ]),
+    features: JSON.stringify([
+      "tecnicos",
+      "servicos",
+      "lucratividade",
+      "filiais",
+      "relatorios_avancados",
+    ]),
+    ativo: true,
+  },
+];
+
 export async function ensureSeedPlanos(): Promise<void> {
   const existentes = await db.select().from(planos);
-  if (existentes.length > 0) return;
-  await db.insert(planos).values([
-    {
-      nome: "Starter",
-      descricao: "Para lojas começando — 1 usuário, controle de estoque e PDV",
-      preco: "49.90",
-      intervalo: "mes",
-      recursos: JSON.stringify([
-        "1 usuário",
-        "Estoque ilimitado",
-        "PDV completo",
-        "Scanner via celular",
-      ]),
-      features: JSON.stringify([]),
-      ativo: true,
-    },
-    {
-      nome: "Profissional",
-      descricao: "Para oficinas em crescimento — múltiplos usuários e técnicos",
-      preco: "99.90",
-      intervalo: "mes",
-      recursos: JSON.stringify([
-        "Usuários ilimitados",
-        "Gestão de técnicos e serviços",
-        "Dashboard de lucratividade",
-        "Scanner via celular",
-        "Suporte prioritário",
-      ]),
-      features: JSON.stringify(["tecnicos", "servicos", "lucratividade"]),
-      ativo: true,
-    },
-    {
-      nome: "Premium",
-      descricao: "Para redes — relatórios avançados e múltiplas filiais",
-      preco: "199.90",
-      intervalo: "mes",
-      recursos: JSON.stringify([
-        "Tudo do Profissional",
-        "Múltiplas filiais",
-        "Relatórios avançados",
-        "API completa",
-        "Suporte 24/7",
-      ]),
-      features: JSON.stringify([
-        "tecnicos",
-        "servicos",
-        "lucratividade",
-        "filiais",
-        "relatorios_avancados",
-      ]),
-      ativo: true,
-    },
-  ]);
-  logger.info("planos seed criados");
+  if (existentes.length === 0) {
+    await db.insert(planos).values(SEED_PLANOS);
+    logger.info("planos seed criados");
+    return;
+  }
+  for (const seed of SEED_PLANOS) {
+    const existente = existentes.find((p) => p.nome === seed.nome);
+    if (!existente) continue;
+    const precoAtual = Number(existente.preco).toFixed(2);
+    const precoNovo = Number(seed.preco).toFixed(2);
+    if (precoAtual !== precoNovo) {
+      await db
+        .update(planos)
+        .set({ preco: seed.preco, stripeProductId: null, stripePriceId: null })
+        .where(eq(planos.id, existente.id));
+      logger.info({ planoId: existente.id, nome: seed.nome, precoNovo }, "preco do plano atualizado");
+    }
+  }
 }
 
 export async function syncStripePlanos(): Promise<void> {
