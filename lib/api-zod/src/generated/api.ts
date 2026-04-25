@@ -169,6 +169,10 @@ export const GetAssinaturaResponse = zod.object({
  */
 export const CreateCheckoutBody = zod.object({
   planoId: zod.number(),
+  pularTrial: zod
+    .boolean()
+    .optional()
+    .describe("Se true, cobra imediatamente sem aguardar fim do trial"),
 });
 
 export const CreateCheckoutResponse = zod.object({

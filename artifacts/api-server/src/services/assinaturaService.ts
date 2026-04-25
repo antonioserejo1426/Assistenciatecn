@@ -1,5 +1,6 @@
 import { db, planos, assinaturas, empresas, sistemaConfig } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import type Stripe from "stripe";
 import { stripe } from "../lib/stripe";
 import { logger } from "../lib/logger";
 
@@ -87,6 +88,7 @@ export async function criarCheckout(
   empresaId: number,
   planoId: number,
   origin: string,
+  pularTrial = false,
 ): Promise<{ url: string }> {
   if (!stripe) throw new Error("STRIPE_NAO_CONFIGURADO");
   const [empresa] = await db.select().from(empresas).where(eq(empresas.id, empresaId)).limit(1);
@@ -101,14 +103,18 @@ export async function criarCheckout(
     await db.update(empresas).set({ stripeCustomerId: customerId }).where(eq(empresas.id, empresa.id));
   }
 
+  const subscriptionData: Record<string, unknown> = {
+    metadata: { empresaId: String(empresaId), planoId: String(planoId) },
+  };
+  if (!pularTrial) {
+    subscriptionData["trial_period_days"] = await getTrialDiasPadrao();
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: plano.stripePriceId, quantity: 1 }],
-    subscription_data: {
-      trial_period_days: await getTrialDiasPadrao(),
-      metadata: { empresaId: String(empresaId), planoId: String(planoId) },
-    },
+    subscription_data: subscriptionData as Stripe.Checkout.SessionCreateParams.SubscriptionData,
     metadata: { empresaId: String(empresaId), planoId: String(planoId) },
     success_url: `${origin}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/assinatura/cancelado`,

@@ -803,6 +803,9 @@ components:
       required: [planoId]
       properties:
         planoId: { type: integer }
+        pularTrial:
+          type: boolean
+          description: Se true, cobra imediatamente sem aguardar fim do trial
     CheckoutResponse:
       type: object
       required: [url]

@@ -83,6 +83,8 @@ export interface Assinatura {
 
 export interface CheckoutBody {
   planoId: number;
+  /** Se true, cobra imediatamente sem aguardar fim do trial */
+  pularTrial?: boolean;
 }
 
 export interface CheckoutResponse {

@@ -22,8 +22,9 @@ router.post("/assinatura/checkout", requireAuth, async (req, res) => {
     if (!req.auth?.empresaId) return res.status(403).json({ error: "sem_empresa" });
     const planoId = Number(req.body?.planoId);
     if (!planoId) return res.status(400).json({ error: "planoId_obrigatorio" });
+    const pularTrial = Boolean(req.body?.pularTrial);
     const origin = getOrigin(req);
-    const result = await svc.criarCheckout(req.auth.empresaId, planoId, origin);
+    const result = await svc.criarCheckout(req.auth.empresaId, planoId, origin, pularTrial);
     res.json(result);
   } catch (e) {
     res.status(400).json({ error: (e as Error).message });
