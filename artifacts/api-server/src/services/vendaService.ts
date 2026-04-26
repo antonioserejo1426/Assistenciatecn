@@ -91,10 +91,14 @@ export async function createVenda(
     }> = [];
 
     for (const item of data.itens) {
+      if (!item.produtoId || !Number.isFinite(item.quantidade) || item.quantidade <= 0) {
+        throw new Error("ITEM_INVALIDO");
+      }
       const [p] = await tx
         .select()
         .from(produtos)
         .where(and(eq(produtos.empresaId, empresaId), eq(produtos.id, item.produtoId)))
+        .for("update")
         .limit(1);
       if (!p) throw new Error(`PRODUTO_${item.produtoId}_NAO_ENCONTRADO`);
       if (p.estoque < item.quantidade) throw new Error(`ESTOQUE_INSUFICIENTE_${p.id}`);
@@ -108,10 +112,18 @@ export async function createVenda(
         precoUnitario: preco,
         custoUnitario: custo,
       });
-      await tx
+      const updRes = await tx
         .update(produtos)
-        .set({ estoque: p.estoque - item.quantidade })
-        .where(eq(produtos.id, p.id));
+        .set({ estoque: sql`${produtos.estoque} - ${item.quantidade}` })
+        .where(
+          and(
+            eq(produtos.id, p.id),
+            eq(produtos.empresaId, empresaId),
+            sql`${produtos.estoque} >= ${item.quantidade}`,
+          ),
+        )
+        .returning({ id: produtos.id });
+      if (updRes.length === 0) throw new Error(`ESTOQUE_INSUFICIENTE_${p.id}`);
     }
 
     const [venda] = await tx

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { messageFromError } from "@/lib/api-error";
 import {
   useListTecnicos,
   useCreateTecnico,
@@ -60,15 +61,19 @@ function TecnicosPageInner() {
       setOpen(false);
       setForm({ nome: "", especialidade: "", telefone: "" });
       qc.invalidateQueries({ queryKey: getListTecnicosQueryKey() });
-    } catch {
-      toast.error("Erro ao criar técnico");
+    } catch (e) {
+      toast.error(messageFromError(e, "Erro ao criar técnico"));
     }
   }
 
   async function deletar(id: number) {
     if (!confirm("Remover este técnico?")) return;
-    await remover.mutateAsync({ id });
-    qc.invalidateQueries({ queryKey: getListTecnicosQueryKey() });
+    try {
+      await remover.mutateAsync({ id });
+      qc.invalidateQueries({ queryKey: getListTecnicosQueryKey() });
+    } catch (e) {
+      toast.error(messageFromError(e, "Erro ao remover técnico"));
+    }
   }
 
   return (

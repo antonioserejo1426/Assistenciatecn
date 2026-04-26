@@ -9,6 +9,7 @@ import {
   getListServicosQueryKey,
   type Servico,
 } from "@workspace/api-client-react";
+import { messageFromError } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +55,7 @@ export default function ServicosPageWrapper() {
 
 function ServicosPageInner() {
   const qc = useQueryClient();
-  const { data: servicos = [] } = useListServicos();
+  const { data: servicos = [], isLoading, isError, refetch } = useListServicos();
   const { data: tecnicos = [] } = useListTecnicos();
   const criar = useCreateServico();
   const atualizar = useUpdateServico();
@@ -70,29 +71,42 @@ function ServicosPageInner() {
   });
 
   async function salvar() {
+    if (!form.descricao.trim()) {
+      toast.error("Descreva o serviço");
+      return;
+    }
+    const valor = form.valor ? Number(form.valor.replace(",", ".")) : 0;
+    if (Number.isNaN(valor) || valor < 0) {
+      toast.error("Valor inválido");
+      return;
+    }
     try {
       await criar.mutateAsync({
         data: {
-          descricao: form.descricao,
-          cliente: form.cliente || null,
-          clienteTelefone: form.clienteTelefone || null,
-          aparelho: form.aparelho || null,
+          descricao: form.descricao.trim(),
+          cliente: form.cliente.trim() || null,
+          clienteTelefone: form.clienteTelefone.trim() || null,
+          aparelho: form.aparelho.trim() || null,
           tecnicoId: form.tecnicoId ? Number(form.tecnicoId) : null,
-          valor: Number(form.valor) || 0,
+          valor,
         },
       });
       toast.success("Serviço criado");
       setOpen(false);
       setForm({ descricao: "", cliente: "", clienteTelefone: "", aparelho: "", tecnicoId: "", valor: "" });
       qc.invalidateQueries({ queryKey: getListServicosQueryKey() });
-    } catch {
-      toast.error("Erro ao criar");
+    } catch (e) {
+      toast.error(messageFromError(e, "Erro ao criar serviço"));
     }
   }
 
   async function mudarStatus(s: Servico, novo: string) {
-    await atualizar.mutateAsync({ id: s.id, data: { status: novo } });
-    qc.invalidateQueries({ queryKey: getListServicosQueryKey() });
+    try {
+      await atualizar.mutateAsync({ id: s.id, data: { status: novo } });
+      qc.invalidateQueries({ queryKey: getListServicosQueryKey() });
+    } catch (e) {
+      toast.error(messageFromError(e, "Não foi possível mudar o status"));
+    }
   }
 
   return (
@@ -100,7 +114,18 @@ function ServicosPageInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Serviços</h1>
-          <p className="text-sm text-muted-foreground">{servicos.length} serviços</p>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? "carregando…" : `${servicos.length} ${servicos.length === 1 ? "serviço" : "serviços"}`}
+          </p>
+          {isError && (
+            <button
+              type="button"
+              className="mt-1 text-xs text-destructive underline"
+              onClick={() => refetch()}
+            >
+              Erro ao carregar — tentar novamente
+            </button>
+          )}
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

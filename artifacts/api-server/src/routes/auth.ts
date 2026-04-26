@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { db, usuarios, empresas } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
@@ -7,13 +8,46 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
-router.post("/auth/register", async (req, res) => {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "muitas_tentativas", message: "Muitas tentativas. Tente novamente em alguns minutos." },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "muitas_tentativas", message: "Muitos cadastros desse IP. Tente novamente mais tarde." },
+});
+
+router.post("/auth/register", registerLimiter, async (req, res) => {
   try {
     const { empresaNome, nome, email, senha } = req.body ?? {};
     if (!empresaNome || !nome || !email || !senha) {
       return res.status(400).json({ error: "campos_obrigatorios" });
     }
-    const result = await registerEmpresa({ empresaNome, nome, email, senha });
+    if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "email_invalido" });
+    }
+    if (typeof senha !== "string" || senha.length < 6) {
+      return res.status(400).json({ error: "senha_curta", message: "A senha precisa ter pelo menos 6 caracteres." });
+    }
+    if (typeof empresaNome !== "string" || empresaNome.trim().length < 2) {
+      return res.status(400).json({ error: "empresa_nome_invalido" });
+    }
+    if (typeof nome !== "string" || nome.trim().length < 2) {
+      return res.status(400).json({ error: "nome_invalido" });
+    }
+    const result = await registerEmpresa({
+      empresaNome: empresaNome.trim(),
+      nome: nome.trim(),
+      email: email.trim().toLowerCase(),
+      senha,
+    });
     res.json({
       token: result.token,
       user: {
@@ -41,11 +75,14 @@ router.post("/auth/register", async (req, res) => {
   }
 });
 
-router.post("/auth/login", async (req, res) => {
+router.post("/auth/login", loginLimiter, async (req, res) => {
   try {
     const { email, senha } = req.body ?? {};
     if (!email || !senha) return res.status(400).json({ error: "campos_obrigatorios" });
-    const result = await authenticate(email, senha);
+    if (typeof email !== "string" || typeof senha !== "string") {
+      return res.status(400).json({ error: "campos_obrigatorios" });
+    }
+    const result = await authenticate(email.trim().toLowerCase(), senha);
     if (!result) return res.status(401).json({ error: "credenciais_invalidas" });
     res.json({
       token: result.token,

@@ -6,7 +6,7 @@ interface SessaoEntry {
 }
 
 const sessoes = new Map<string, SessaoEntry>();
-const TTL_MS = 30 * 60 * 1000;
+const TTL_MS = 15 * 60 * 1000;
 
 function gc() {
   const now = Date.now();
@@ -17,7 +17,7 @@ function gc() {
 
 export function criarSessao(empresaId: number, baseUrl: string): { sessaoId: string; qrUrl: string } {
   gc();
-  const sessaoId = crypto.randomBytes(8).toString("hex");
+  const sessaoId = crypto.randomBytes(24).toString("hex");
   sessoes.set(sessaoId, { empresaId, criadoEm: Date.now() });
   const qrUrl = `${baseUrl}/scan/${sessaoId}`;
   return { sessaoId, qrUrl };

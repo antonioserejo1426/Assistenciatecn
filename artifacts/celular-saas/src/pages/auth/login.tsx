@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { messageFromError } from "@/lib/api-error";
 import { Crown, Sparkles, ShieldCheck, Zap, BarChart3 } from "lucide-react";
 import heroImage from "@assets/9FE3B637-3BED-471F-98A6-8CD90C1D69E5_1777058540929.jpeg";
 
@@ -36,8 +37,7 @@ export default function Login() {
           setLocation("/");
         },
         onError: (error) => {
-          toast.error("Erro ao fazer login. Verifique suas credenciais.");
-          console.error(error);
+          toast.error(messageFromError(error, "Erro ao fazer login. Verifique suas credenciais."));
         },
       },
     );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { messageFromError } from "@/lib/api-error";
 import {
   useListMovimentacoes,
   useListProdutos,
@@ -57,7 +58,7 @@ export default function EstoquePage() {
       qc.invalidateQueries({ queryKey: getListMovimentacoesQueryKey() });
       qc.invalidateQueries({ queryKey: getListProdutosQueryKey() });
     } catch (e) {
-      toast.error("Erro ao registrar movimentação");
+      toast.error(messageFromError(e, "Erro ao registrar movimentação"));
     }
   }
 

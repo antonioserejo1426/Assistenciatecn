@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
+import { messageFromError } from "@/lib/api-error";
 import { Crown, Sparkles, Check } from "lucide-react";
 import heroImage from "@assets/9FE3B637-3BED-471F-98A6-8CD90C1D69E5_1777058540929.jpeg";
 
@@ -59,9 +60,12 @@ export default function Register() {
               });
               window.location.href = r.url;
               return;
-            } catch {
+            } catch (err) {
               toast.error(
-                "Conta criada, mas não foi possível abrir o pagamento. Vá em Assinatura para finalizar o pagamento e liberar o acesso.",
+                messageFromError(
+                  err,
+                  "Conta criada, mas não foi possível abrir o pagamento. Vá em Assinatura para finalizar o pagamento e liberar o acesso.",
+                ),
               );
               setLocation("/assinatura");
               return;
@@ -71,8 +75,7 @@ export default function Register() {
           setLocation("/assinatura");
         },
         onError: (error) => {
-          toast.error("Erro ao criar conta. Verifique os dados e tente novamente.");
-          console.error(error);
+          toast.error(messageFromError(error, "Erro ao criar conta. Verifique os dados e tente novamente."));
         },
       },
     );

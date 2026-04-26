@@ -258,6 +258,19 @@ export const sistemaConfig = pgTable("sistema_config", {
     .defaultNow(),
 });
 
+export const stripeEventos = pgTable(
+  "stripe_eventos",
+  {
+    id: serial("id").primaryKey(),
+    eventId: varchar("event_id", { length: 200 }).notNull(),
+    tipo: varchar("tipo", { length: 100 }).notNull(),
+    processadoEm: timestamp("processado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("stripe_eventos_event_id_idx").on(t.eventId)],
+);
+
 export type Empresa = typeof empresas.$inferSelect;
 export type Usuario = typeof usuarios.$inferSelect;
 export type Plano = typeof planos.$inferSelect;

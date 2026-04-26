@@ -153,13 +153,19 @@ export async function createMovimentacao(
   if (!produto) throw new Error("PRODUTO_NAO_ENCONTRADO");
 
   const delta = data.tipo === "entrada" ? data.quantidade : -data.quantidade;
-  const novoEstoque = produto.estoque + delta;
-  if (novoEstoque < 0) throw new Error("ESTOQUE_NEGATIVO");
 
-  await db
+  const updated = await db
     .update(produtos)
-    .set({ estoque: novoEstoque })
-    .where(eq(produtos.id, produto.id));
+    .set({ estoque: sql`${produtos.estoque} + ${delta}` })
+    .where(
+      and(
+        eq(produtos.id, produto.id),
+        eq(produtos.empresaId, empresaId),
+        sql`${produtos.estoque} + ${delta} >= 0`,
+      ),
+    )
+    .returning({ id: produtos.id });
+  if (updated.length === 0) throw new Error("ESTOQUE_NEGATIVO");
 
   const [mov] = await db
     .insert(estoqueMovimentacoes)

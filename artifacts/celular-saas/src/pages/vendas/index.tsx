@@ -93,18 +93,34 @@ function VendaDetalhe({ id, onClose }: { id: number | null; onClose: () => void 
 }
 
 export default function VendasPage() {
-  const { data: vendas = [] } = useListVendas();
+  const { data: vendas = [], isLoading, isError, refetch } = useListVendas();
   const [sel, setSel] = useState<number | null>(null);
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Vendas</h1>
-        <p className="text-sm text-muted-foreground">{vendas.length} vendas</p>
+        <p className="text-sm text-muted-foreground">
+          {isLoading ? "carregando…" : `${vendas.length} ${vendas.length === 1 ? "venda" : "vendas"}`}
+        </p>
       </div>
+      {isError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          <p className="font-medium text-destructive">Não foi possível carregar as vendas.</p>
+          <button
+            type="button"
+            className="mt-1 text-xs underline"
+            onClick={() => refetch()}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
       <Card>
         <CardContent className="p-0">
-          {vendas.length === 0 ? (
+          {isLoading ? (
+            <div className="p-12 text-center text-muted-foreground">Carregando vendas…</div>
+          ) : vendas.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
               <Receipt className="mx-auto mb-2 h-10 w-10 opacity-40" />
               Nenhuma venda registrada ainda

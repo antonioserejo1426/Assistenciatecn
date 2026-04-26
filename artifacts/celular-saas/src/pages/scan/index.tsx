@@ -3,6 +3,7 @@ import { useRoute } from "wouter";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
+import { messageFromError } from "@/lib/api-error";
 import { getProdutoByCodigo, useCreateProduto, type Produto } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,8 +115,8 @@ export default function ScanPage() {
       setHistorico((h) => [p, ...h].slice(0, 8));
       toast.success(`${p.nome} cadastrado e enviado`);
       setNovoProduto(null);
-    } catch {
-      toast.error("Falha ao cadastrar");
+    } catch (e) {
+      toast.error(messageFromError(e, "Falha ao cadastrar"));
     }
   }
 

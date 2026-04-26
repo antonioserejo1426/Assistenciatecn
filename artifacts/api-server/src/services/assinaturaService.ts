@@ -1,20 +1,11 @@
-import { db, planos, assinaturas, empresas, sistemaConfig } from "@workspace/db";
+import { db, planos, assinaturas, empresas, sistemaConfig, stripeEventos } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { stripe } from "../lib/stripe";
 import { logger } from "../lib/logger";
 
 export async function getSistemaConfig() {
   const [cfg] = await db.select().from(sistemaConfig).limit(1);
-  if (cfg) {
-    if (cfg.trialDiasPadrao !== 0) {
-      await db
-        .update(sistemaConfig)
-        .set({ trialDiasPadrao: 0, atualizadoEm: new Date() })
-        .where(eq(sistemaConfig.id, cfg.id));
-      return { ...cfg, trialDiasPadrao: 0 };
-    }
-    return cfg;
-  }
+  if (cfg) return cfg;
   const [novo] = await db
     .insert(sistemaConfig)
     .values({ trialDiasPadrao: 0 })
@@ -23,10 +14,17 @@ export async function getSistemaConfig() {
 }
 
 export async function getTrialDiasPadrao(): Promise<number> {
-  return 0;
+  const cfg = await getSistemaConfig();
+  return cfg.trialDiasPadrao ?? 0;
 }
 
-export async function updateSistemaConfig(_input: { trialDiasPadrao?: number }) {
+export async function updateSistemaConfig(input: { trialDiasPadrao?: number }) {
+  const cfg = await getSistemaConfig();
+  const updates: Record<string, unknown> = { atualizadoEm: new Date() };
+  if (typeof input.trialDiasPadrao === "number" && input.trialDiasPadrao >= 0) {
+    updates["trialDiasPadrao"] = Math.floor(input.trialDiasPadrao);
+  }
+  await db.update(sistemaConfig).set(updates).where(eq(sistemaConfig.id, cfg.id));
   return getSistemaConfig();
 }
 
@@ -118,8 +116,17 @@ export async function criarPortal(_empresaId: number, _origin: string): Promise<
   throw new Error("PORTAL_INDISPONIVEL_PAGAMENTO_UNICO");
 }
 
-export async function processarWebhook(event: { type: string; data: { object: Record<string, unknown> } }) {
-  logger.info({ type: event.type }, "stripe webhook recebido");
+export async function processarWebhook(event: { id?: string; type: string; data: { object: Record<string, unknown> } }) {
+  logger.info({ type: event.type, id: event.id }, "stripe webhook recebido");
+
+  if (event.id) {
+    try {
+      await db.insert(stripeEventos).values({ eventId: event.id, tipo: event.type });
+    } catch (err) {
+      logger.info({ eventId: event.id, type: event.type }, "evento stripe ja processado, ignorando duplicado");
+      return;
+    }
+  }
 
   if (event.type === "checkout.session.completed") {
     const sess = event.data.object as Record<string, unknown>;

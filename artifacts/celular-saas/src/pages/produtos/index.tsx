@@ -9,6 +9,7 @@ import {
   getListProdutosQueryKey,
   type Produto,
 } from "@workspace/api-client-react";
+import { messageFromError } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,7 +60,7 @@ export default function ProdutosPage() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
 
-  const { data: produtos = [] } = useListProdutos({ q: busca || undefined });
+  const { data: produtos = [], isLoading, isError, refetch } = useListProdutos({ q: busca || undefined });
   const criar = useCreateProduto();
   const atualizar = useUpdateProduto();
   const remover = useDeleteProduto();
@@ -83,13 +84,33 @@ export default function ProdutosPage() {
   }
 
   async function salvar() {
+    const nomeTrim = form.nome.trim();
+    if (!nomeTrim) {
+      toast.error("Informe o nome do produto");
+      return;
+    }
+    const preco = form.preco ? Number(form.preco.replace(",", ".")) : 0;
+    const custo = form.custo ? Number(form.custo.replace(",", ".")) : 0;
+    const estoque = form.estoque ? Number(form.estoque) : 0;
+    if (Number.isNaN(preco) || preco < 0) {
+      toast.error("Preço inválido");
+      return;
+    }
+    if (Number.isNaN(custo) || custo < 0) {
+      toast.error("Custo inválido");
+      return;
+    }
+    if (Number.isNaN(estoque) || !Number.isInteger(estoque) || estoque < 0) {
+      toast.error("Estoque inválido");
+      return;
+    }
     const data = {
-      nome: form.nome,
-      codigoBarras: form.codigoBarras || null,
-      preco: Number(form.preco) || 0,
-      custo: Number(form.custo) || 0,
-      estoque: Number(form.estoque) || 0,
-      descricao: form.descricao || null,
+      nome: nomeTrim,
+      codigoBarras: form.codigoBarras.trim() || null,
+      preco,
+      custo,
+      estoque,
+      descricao: form.descricao.trim() || null,
     };
     try {
       if (form.id) {
@@ -102,15 +123,19 @@ export default function ProdutosPage() {
       setOpen(false);
       qc.invalidateQueries({ queryKey: getListProdutosQueryKey() });
     } catch (e) {
-      toast.error("Erro ao salvar");
+      toast.error(messageFromError(e, "Erro ao salvar produto"));
     }
   }
 
   async function deletar(p: Produto) {
     if (!confirm(`Remover ${p.nome}?`)) return;
-    await remover.mutateAsync({ id: p.id });
-    toast.success("Removido");
-    qc.invalidateQueries({ queryKey: getListProdutosQueryKey() });
+    try {
+      await remover.mutateAsync({ id: p.id });
+      toast.success("Removido");
+      qc.invalidateQueries({ queryKey: getListProdutosQueryKey() });
+    } catch (e) {
+      toast.error(messageFromError(e, "Erro ao remover produto"));
+    }
   }
 
   function corEstoque(n: number) {
@@ -126,7 +151,7 @@ export default function ProdutosPage() {
         <div>
           <h1 className="text-2xl font-bold">Produtos</h1>
           <p className="text-sm text-muted-foreground">
-            {produtos.length} {produtos.length === 1 ? "produto" : "produtos"}
+            {isLoading ? "carregando…" : `${produtos.length} ${produtos.length === 1 ? "produto" : "produtos"}`}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -185,6 +210,19 @@ export default function ProdutosPage() {
         className="max-w-md"
       />
 
+      {isError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          <p className="font-medium text-destructive">Não foi possível carregar os produtos.</p>
+          <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+      {isLoading && (
+        <div className="rounded-md border bg-muted/30 p-8 text-center text-sm text-muted-foreground">
+          Carregando produtos…
+        </div>
+      )}
       <Card>
         <CardContent className="p-0">
           {produtos.length === 0 ? (

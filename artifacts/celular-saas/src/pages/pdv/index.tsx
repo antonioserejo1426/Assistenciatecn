@@ -2,13 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateScannerSessao,
   useCreateVenda,
   useListProdutos,
   getProdutoByCodigo,
+  getListVendasQueryKey,
+  getListProdutosQueryKey,
   type Produto,
 } from "@workspace/api-client-react";
+import { messageFromError } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +50,7 @@ export default function PDV() {
   const inputRef = useRef<HTMLInputElement>(null);
   const socketRef = useRef<Socket | null>(null);
 
+  const qc = useQueryClient();
   const { data: produtos = [] } = useListProdutos();
   const sessao = useCreateScannerSessao();
   const criarVenda = useCreateVenda();
@@ -155,8 +160,10 @@ export default function PDV() {
       setCarrinho([]);
       setCliente("");
       setFinalizarOpen(false);
+      qc.invalidateQueries({ queryKey: getListVendasQueryKey() });
+      qc.invalidateQueries({ queryKey: getListProdutosQueryKey() });
     } catch (e) {
-      toast.error("Erro ao finalizar venda");
+      toast.error(messageFromError(e, "Erro ao finalizar venda"));
     }
   }
 
@@ -209,14 +216,16 @@ export default function PDV() {
                     <Button
                       size="icon"
                       variant="outline"
+                      aria-label="Diminuir quantidade"
                       onClick={() => alterarQty(i.produto.id, -1)}
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center font-medium">{i.qty}</span>
+                    <span className="w-8 text-center font-medium" aria-live="polite">{i.qty}</span>
                     <Button
                       size="icon"
                       variant="outline"
+                      aria-label="Aumentar quantidade"
                       onClick={() => alterarQty(i.produto.id, +1)}
                     >
                       <Plus className="h-3 w-3" />
@@ -228,6 +237,7 @@ export default function PDV() {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label={`Remover ${i.produto.nome} do carrinho`}
                     onClick={() => remover(i.produto.id)}
                   >
                     <Trash2 className="h-4 w-4" />
