@@ -3,12 +3,11 @@ import {
   useGetAssinatura,
   useListPlanos,
   useCreateCheckout,
-  useCreatePortal,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -17,23 +16,13 @@ export default function AssinaturaPage() {
   const { data: assinatura } = useGetAssinatura();
   const { data: planos = [] } = useListPlanos();
   const checkout = useCreateCheckout();
-  const portal = useCreatePortal();
 
-  async function assinar(planoId: number) {
+  async function comprar(planoId: number) {
     try {
       const r = await checkout.mutateAsync({ data: { planoId } });
       window.location.href = r.url;
     } catch (e) {
-      toast.error("Não foi possível iniciar o checkout. Configure o Stripe primeiro.");
-    }
-  }
-
-  async function abrirPortal() {
-    try {
-      const r = await portal.mutateAsync();
-      window.location.href = r.url;
-    } catch {
-      toast.error("Não foi possível abrir o portal de cobrança");
+      toast.error("Não foi possível iniciar o pagamento. Configure o Stripe primeiro.");
     }
   }
 
@@ -46,16 +35,20 @@ export default function AssinaturaPage() {
 
   const statusLabel =
     assinatura?.status === "ativa"
-      ? "Ativa"
+      ? "Liberado"
       : assinatura?.status === "pendente"
         ? "Aguardando pagamento"
-        : assinatura?.status ?? "Sem assinatura";
+        : assinatura?.status === "falha_pagamento"
+          ? "Pagamento não autorizado"
+          : assinatura?.status === "reembolsada"
+            ? "Reembolsada"
+            : assinatura?.status ?? "Sem plano";
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Assinatura</h1>
-        <p className="text-sm text-muted-foreground">Gerencie seu plano e pagamento</p>
+        <h1 className="text-2xl font-bold">Plano</h1>
+        <p className="text-sm text-muted-foreground">Pagamento único — acesso vitalício após confirmação</p>
       </div>
 
       <Card>
@@ -74,18 +67,9 @@ export default function AssinaturaPage() {
           </div>
           {assinatura?.plano && (
             <p className="text-sm text-muted-foreground">
-              {fmt(assinatura.plano.preco)} / {assinatura.plano.intervalo}
+              {fmt(assinatura.plano.preco)} — pagamento único
             </p>
           )}
-          {assinatura?.proximoVencimento && (
-            <p className="text-sm">
-              Próximo vencimento:{" "}
-              <strong>{new Date(assinatura.proximoVencimento).toLocaleDateString("pt-BR")}</strong>
-            </p>
-          )}
-          <Button variant="outline" onClick={abrirPortal} disabled={portal.isPending}>
-            <CreditCard className="mr-2 h-4 w-4" /> Gerenciar pagamento
-          </Button>
         </CardContent>
       </Card>
 
@@ -106,7 +90,7 @@ export default function AssinaturaPage() {
                 <CardContent className="space-y-3">
                   <div className="text-3xl font-bold">
                     {fmt(p.preco)}
-                    <span className="text-sm font-normal text-muted-foreground">/{p.intervalo}</span>
+                    <span className="ml-2 text-sm font-normal text-muted-foreground">pagamento único</span>
                   </div>
                   <ul className="space-y-1 text-sm">
                     {p.recursos?.map((r, i) => (
@@ -119,10 +103,10 @@ export default function AssinaturaPage() {
                   <Button
                     className="w-full"
                     variant={ativo ? "outline" : "default"}
-                    onClick={() => assinar(p.id)}
+                    onClick={() => comprar(p.id)}
                     disabled={checkout.isPending || ativo}
                   >
-                    {ativo ? "Plano ativo" : "Assinar agora"}
+                    {ativo ? "Plano ativo" : "Comprar agora"}
                   </Button>
                 </CardContent>
               </Card>

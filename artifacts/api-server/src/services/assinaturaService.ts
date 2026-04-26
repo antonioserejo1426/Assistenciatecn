@@ -1,6 +1,5 @@
 import { db, planos, assinaturas, empresas, sistemaConfig } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import type Stripe from "stripe";
 import { stripe } from "../lib/stripe";
 import { logger } from "../lib/logger";
 
@@ -99,15 +98,13 @@ export async function criarCheckout(
     await db.update(empresas).set({ stripeCustomerId: customerId }).where(eq(empresas.id, empresa.id));
   }
 
-  const subscriptionData: Record<string, unknown> = {
-    metadata: { empresaId: String(empresaId), planoId: String(planoId) },
-  };
-
   const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
+    mode: "payment",
     customer: customerId,
     line_items: [{ price: plano.stripePriceId, quantity: 1 }],
-    subscription_data: subscriptionData as Stripe.Checkout.SessionCreateParams.SubscriptionData,
+    payment_intent_data: {
+      metadata: { empresaId: String(empresaId), planoId: String(planoId) },
+    },
     metadata: { empresaId: String(empresaId), planoId: String(planoId) },
     success_url: `${origin}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/assinatura/cancelado`,
@@ -117,15 +114,8 @@ export async function criarCheckout(
   return { url: session.url };
 }
 
-export async function criarPortal(empresaId: number, origin: string): Promise<{ url: string }> {
-  if (!stripe) throw new Error("STRIPE_NAO_CONFIGURADO");
-  const [empresa] = await db.select().from(empresas).where(eq(empresas.id, empresaId)).limit(1);
-  if (!empresa?.stripeCustomerId) throw new Error("SEM_CUSTOMER");
-  const portal = await stripe.billingPortal.sessions.create({
-    customer: empresa.stripeCustomerId,
-    return_url: `${origin}/assinatura`,
-  });
-  return { url: portal.url };
+export async function criarPortal(_empresaId: number, _origin: string): Promise<{ url: string }> {
+  throw new Error("PORTAL_INDISPONIVEL_PAGAMENTO_UNICO");
 }
 
 export async function processarWebhook(event: { type: string; data: { object: Record<string, unknown> } }) {
@@ -136,69 +126,81 @@ export async function processarWebhook(event: { type: string; data: { object: Re
     const meta = (sess["metadata"] ?? {}) as Record<string, string>;
     const empresaId = Number(meta["empresaId"]);
     const planoId = Number(meta["planoId"]);
-    const subscriptionId = sess["subscription"] as string | undefined;
+    const paymentIntentId = sess["payment_intent"] as string | undefined;
+    const paymentStatus = sess["payment_status"] as string | undefined;
     if (empresaId && planoId) {
-      await upsertAssinatura(empresaId, planoId, subscriptionId, "pendente");
+      const novoStatus = paymentStatus === "paid" ? "ativa" : "pendente";
+      await upsertAssinatura(empresaId, planoId, paymentIntentId, novoStatus);
+      if (novoStatus === "ativa") {
+        await db
+          .update(empresas)
+          .set({ bloqueada: false, ativa: true })
+          .where(eq(empresas.id, empresaId));
+      }
     }
   }
-  if (event.type === "invoice.payment_succeeded") {
-    const inv = event.data.object as Record<string, unknown>;
-    const subId = inv["subscription"] as string | undefined;
-    const periodEnd = inv["period_end"] as number | undefined;
-    if (subId) {
+
+  if (event.type === "payment_intent.succeeded") {
+    const pi = event.data.object as Record<string, unknown>;
+    const meta = (pi["metadata"] ?? {}) as Record<string, string>;
+    const empresaId = Number(meta["empresaId"]);
+    const planoId = Number(meta["planoId"]);
+    const paymentIntentId = pi["id"] as string | undefined;
+    if (empresaId && planoId) {
+      await upsertAssinatura(empresaId, planoId, paymentIntentId, "ativa");
+      await db
+        .update(empresas)
+        .set({ bloqueada: false, ativa: true })
+        .where(eq(empresas.id, empresaId));
+    }
+  }
+
+  if (event.type === "payment_intent.payment_failed" || event.type === "checkout.session.expired") {
+    const obj = event.data.object as Record<string, unknown>;
+    const meta = (obj["metadata"] ?? {}) as Record<string, string>;
+    const empresaId = Number(meta["empresaId"]);
+    if (empresaId) {
+      const [exist] = await db
+        .select()
+        .from(assinaturas)
+        .where(eq(assinaturas.empresaId, empresaId))
+        .limit(1);
+      if (exist && exist.status !== "ativa") {
+        await db
+          .update(assinaturas)
+          .set({ status: "falha_pagamento" })
+          .where(eq(assinaturas.id, exist.id));
+      }
+    }
+  }
+
+  if (event.type === "charge.refunded") {
+    const ch = event.data.object as Record<string, unknown>;
+    const paymentIntentId = ch["payment_intent"] as string | undefined;
+    if (paymentIntentId) {
       await db
         .update(assinaturas)
-        .set({
-          status: "ativa",
-          proximoVencimento: periodEnd ? new Date(periodEnd * 1000) : null,
-        })
-        .where(eq(assinaturas.stripeSubscriptionId, subId));
-      const [a] = await db.select().from(assinaturas).where(eq(assinaturas.stripeSubscriptionId, subId)).limit(1);
-      if (a) await db.update(empresas).set({ bloqueada: false, ativa: true }).where(eq(empresas.id, a.empresaId));
+        .set({ status: "reembolsada", canceladaEm: new Date() })
+        .where(eq(assinaturas.stripeSubscriptionId, paymentIntentId));
+      const [a] = await db
+        .select()
+        .from(assinaturas)
+        .where(eq(assinaturas.stripeSubscriptionId, paymentIntentId))
+        .limit(1);
+      if (a) {
+        await db
+          .update(empresas)
+          .set({ bloqueada: true })
+          .where(eq(empresas.id, a.empresaId));
+      }
     }
-  }
-  if (event.type === "invoice.payment_failed") {
-    const inv = event.data.object as Record<string, unknown>;
-    const subId = inv["subscription"] as string | undefined;
-    if (subId) {
-      await db.update(assinaturas).set({ status: "vencida" }).where(eq(assinaturas.stripeSubscriptionId, subId));
-    }
-  }
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Record<string, unknown>;
-    const subId = sub["id"] as string;
-    await db
-      .update(assinaturas)
-      .set({ status: "cancelada", canceladaEm: new Date() })
-      .where(eq(assinaturas.stripeSubscriptionId, subId));
-  }
-  if (event.type === "customer.subscription.updated") {
-    const sub = event.data.object as Record<string, unknown>;
-    const subId = sub["id"] as string;
-    const status = sub["status"] as string;
-    const periodEnd = sub["current_period_end"] as number | undefined;
-    const novoStatus =
-      status === "active"
-        ? "ativa"
-        : status === "trialing"
-          ? "pendente"
-          : status === "canceled"
-            ? "cancelada"
-            : "vencida";
-    await db
-      .update(assinaturas)
-      .set({
-        status: novoStatus,
-        proximoVencimento: periodEnd ? new Date(periodEnd * 1000) : null,
-      })
-      .where(eq(assinaturas.stripeSubscriptionId, subId));
   }
 }
 
 async function upsertAssinatura(
   empresaId: number,
   planoId: number,
-  subscriptionId: string | undefined,
+  paymentIntentId: string | undefined,
   status: string,
 ) {
   const [exist] = await db.select().from(assinaturas).where(eq(assinaturas.empresaId, empresaId)).limit(1);
@@ -208,7 +210,8 @@ async function upsertAssinatura(
       .set({
         planoId,
         status,
-        stripeSubscriptionId: subscriptionId ?? exist.stripeSubscriptionId,
+        stripeSubscriptionId: paymentIntentId ?? exist.stripeSubscriptionId,
+        inicio: status === "ativa" && !exist.inicio ? new Date() : exist.inicio,
       })
       .where(eq(assinaturas.id, exist.id));
   } else {
@@ -216,7 +219,7 @@ async function upsertAssinatura(
       empresaId,
       planoId,
       status,
-      stripeSubscriptionId: subscriptionId,
+      stripeSubscriptionId: paymentIntentId,
       inicio: new Date(),
     });
   }

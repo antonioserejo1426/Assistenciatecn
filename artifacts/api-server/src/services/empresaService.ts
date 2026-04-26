@@ -36,7 +36,7 @@ const SEED_PLANOS = [
     nome: "Starter",
     descricao: "Para lojas começando — 1 usuário, controle de estoque e PDV",
     preco: "0.50",
-    intervalo: "mes",
+    intervalo: "unico",
     recursos: JSON.stringify([
       "1 usuário",
       "Estoque ilimitado",
@@ -50,7 +50,7 @@ const SEED_PLANOS = [
     nome: "Profissional",
     descricao: "Para oficinas em crescimento — múltiplos usuários e técnicos",
     preco: "0.50",
-    intervalo: "mes",
+    intervalo: "unico",
     recursos: JSON.stringify([
       "Usuários ilimitados",
       "Gestão de técnicos e serviços",
@@ -65,7 +65,7 @@ const SEED_PLANOS = [
     nome: "Premium",
     descricao: "Para redes — relatórios avançados e múltiplas filiais",
     preco: "0.50",
-    intervalo: "mes",
+    intervalo: "unico",
     recursos: JSON.stringify([
       "Tudo do Profissional",
       "Múltiplas filiais",
@@ -120,7 +120,6 @@ export async function syncStripePlanos(): Promise<void> {
         product: product.id,
         unit_amount: Math.round(Number(plano.preco) * 100),
         currency: "brl",
-        recurring: { interval: "month" },
       });
       await db
         .update(planos)
