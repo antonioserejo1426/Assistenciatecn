@@ -21,8 +21,17 @@ export default function AssinaturaPage() {
     try {
       const r = await checkout.mutateAsync({ data: { planoId } });
       window.location.href = r.url;
-    } catch (e) {
-      toast.error("Não foi possível iniciar o pagamento. Configure o Stripe primeiro.");
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } }; message?: string };
+      const code = err?.response?.data?.error || err?.message || "erro_desconhecido";
+      const human: Record<string, string> = {
+        STRIPE_NAO_CONFIGURADO: "Stripe não está configurado no servidor. Verifique as chaves STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET na publicação.",
+        PLANO_SEM_STRIPE: "Este plano ainda não foi sincronizado com o Stripe. Reinicie o servidor para tentar novamente.",
+        EMPRESA_NAO_ENCONTRADA: "Empresa não encontrada. Faça login novamente.",
+        planoId_obrigatorio: "Selecione um plano válido.",
+        sem_empresa: "Sua conta não está vinculada a uma empresa.",
+      };
+      toast.error(human[code] ?? `Não foi possível iniciar o pagamento (${code})`);
     }
   }
 

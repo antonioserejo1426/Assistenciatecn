@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { requireAuth } from "../lib/auth";
 import * as svc from "../services/assinaturaService";
-import { getOrigin } from "../lib/stripe";
+import { getOrigin, stripeEnabled } from "../lib/stripe";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -19,6 +20,10 @@ router.get("/assinatura", requireAuth, async (req, res) => {
 
 router.post("/assinatura/checkout", requireAuth, async (req, res) => {
   try {
+    if (!stripeEnabled) {
+      logger.error("checkout falhou: STRIPE_SECRET_KEY ausente em produção");
+      return res.status(503).json({ error: "STRIPE_NAO_CONFIGURADO" });
+    }
     if (!req.auth?.empresaId) return res.status(403).json({ error: "sem_empresa" });
     const planoId = Number(req.body?.planoId);
     if (!planoId) return res.status(400).json({ error: "planoId_obrigatorio" });
@@ -27,7 +32,9 @@ router.post("/assinatura/checkout", requireAuth, async (req, res) => {
     const result = await svc.criarCheckout(req.auth.empresaId, planoId, origin, pularTrial);
     res.json(result);
   } catch (e) {
-    res.status(400).json({ error: (e as Error).message });
+    const msg = (e as Error).message;
+    logger.error({ err: msg, stack: (e as Error).stack, empresaId: req.auth?.empresaId, planoId: req.body?.planoId }, "checkout falhou");
+    res.status(400).json({ error: msg });
   }
 });
 
