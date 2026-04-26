@@ -96,12 +96,22 @@ export async function ensureSeedPlanos(): Promise<void> {
     if (!existente) continue;
     const precoAtual = Number(existente.preco).toFixed(2);
     const precoNovo = Number(seed.preco).toFixed(2);
-    if (precoAtual !== precoNovo) {
+    const intervaloMudou = existente.intervalo !== seed.intervalo;
+    const precoMudou = precoAtual !== precoNovo;
+    if (precoMudou || intervaloMudou) {
       await db
         .update(planos)
-        .set({ preco: seed.preco, stripeProductId: null, stripePriceId: null })
+        .set({
+          preco: seed.preco,
+          intervalo: seed.intervalo,
+          stripeProductId: null,
+          stripePriceId: null,
+        })
         .where(eq(planos.id, existente.id));
-      logger.info({ planoId: existente.id, nome: seed.nome, precoNovo }, "preco do plano atualizado");
+      logger.info(
+        { planoId: existente.id, nome: seed.nome, precoNovo, intervaloNovo: seed.intervalo },
+        "plano migrado (preco/intervalo) — stripe price será recriado",
+      );
     }
   }
 }
