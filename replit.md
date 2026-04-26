@@ -3,7 +3,7 @@
 ## Visão geral
 
 TecnoFix é um SaaS multi-tenant em PT-BR para lojas brasileiras de assistência técnica de celulares.
-Stack: pnpm monorepo (TypeScript), Express + PostgreSQL/Drizzle no backend, React + Vite + Tailwind no frontend, Stripe para cobrança recorrente, Socket.io para o scanner de código de barras pareado entre PC e celular.
+Stack: pnpm monorepo (TypeScript), Express + PostgreSQL/Drizzle no backend, React + Vite + Tailwind no frontend, Stripe para **pagamento único** (sem assinaturas recorrentes), Socket.io para o scanner de código de barras pareado entre PC e celular.
 
 ## Artefatos
 
@@ -22,7 +22,7 @@ Schema Drizzle (`lib/db/src/schema/`):
 
 Auth (`lib/auth.ts`): JWT 30d, `requireAuth`, `requireActiveSubscription`, `requireSuperAdmin`.
 
-Stripe: webhook em `/api/stripe/webhook` com **raw body antes do `express.json`** (`app.ts`). Sync de planos→prices no boot. Checkout sem trial — empresa nasce com `assinaturaStatus="pendente"` e só ganha `features` após pagamento confirmado (`status="ativa"`).
+Stripe (**pagamento único**, modo `payment` no Checkout): webhook em `/api/stripe/webhook` com **raw body antes do `express.json`** (`app.ts`). Sync de planos→prices no boot cria preços one-time (sem `recurring`). Eventos tratados: `checkout.session.completed`, `payment_intent.succeeded`, `payment_intent.payment_failed`, `checkout.session.expired`, `charge.refunded`. Empresa nasce com `assinaturaStatus="pendente"` e só ganha `features` após pagamento confirmado (`status="ativa"`). Status extras: `falha_pagamento`, `reembolsada`. A coluna `stripeSubscriptionId` é reusada para guardar o `payment_intent` ID. Não há portal de cobrança (rota `/api/assinatura/portal` retorna `PORTAL_INDISPONIVEL_PAGAMENTO_UNICO`).
 
 Scanner: Socket.io em `/socket.io`. Sala `pdv:<sessaoId>`. PC entra com `join_pdv`, celular emite `scanner:add` ou `scanner:novo`, servidor faz broadcast.
 

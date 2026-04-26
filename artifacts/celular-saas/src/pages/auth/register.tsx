@@ -133,7 +133,7 @@ export default function Register() {
                   <div className="font-display text-2xl font-bold text-white">
                     {fmt(planoSelecionado.preco)}
                   </div>
-                  <div className="text-[11px] text-white/70">/{planoSelecionado.intervalo}</div>
+                  <div className="text-[11px] text-white/70">pagamento único</div>
                 </div>
               </div>
               {planoSelecionado.recursos && planoSelecionado.recursos.length > 0 && (

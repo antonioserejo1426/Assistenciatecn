@@ -7,9 +7,9 @@ export default function AssinaturaSucesso() {
     <div className="flex h-screen items-center justify-center bg-background p-6">
       <div className="max-w-md text-center">
         <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-500" />
-        <h1 className="mb-2 text-2xl font-bold">Assinatura confirmada</h1>
+        <h1 className="mb-2 text-2xl font-bold">Pagamento confirmado</h1>
         <p className="mb-6 text-muted-foreground">
-          Pronto! Você já pode usar todos os recursos do TecnoFix sem limites.
+          Pronto! Seu acesso ao TecnoFix está liberado de forma vitalícia.
         </p>
         <Button asChild size="lg">
           <Link href="/">Ir para o painel</Link>

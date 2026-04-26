@@ -173,9 +173,9 @@ export default function Landing() {
                   )}
                   <h3 className="font-display text-2xl font-bold">{p.nome}</h3>
                   <p className="mt-1 text-sm text-white/60">{p.descricao}</p>
-                  <div className="mt-6 flex items-end gap-1">
+                  <div className="mt-6 flex items-end gap-2">
                     <span className="font-display text-4xl font-bold">{fmt(p.preco)}</span>
-                    <span className="pb-1 text-sm text-white/60">/{p.intervalo}</span>
+                    <span className="pb-1 text-sm text-white/60">pagamento único</span>
                   </div>
                   <ul className="mt-6 flex-1 space-y-2.5 text-sm">
                     {p.recursos?.map((r, i) => (
