@@ -200,7 +200,6 @@ router.patch("/admin/planos/:id", async (req, res) => {
         product: alvo.stripeProductId,
         unit_amount: Math.round(Number(updates["preco"]) * 100),
         currency: "brl",
-        recurring: { interval: "month" },
       });
       if (alvo.stripePriceId) {
         try {
