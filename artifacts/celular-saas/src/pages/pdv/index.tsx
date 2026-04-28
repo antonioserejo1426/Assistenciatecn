@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { useMemo, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,6 +12,8 @@ import {
   type Produto,
 } from "@workspace/api-client-react";
 import { messageFromError } from "@/lib/api-error";
+import { formatBRL } from "@/lib/utils";
+import { useScannerSocket } from "@/hooks/use-scanner-socket";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,9 +36,6 @@ import { Label } from "@/components/ui/label";
 
 type CartItem = { produto: Produto; qty: number };
 
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-
 export default function PDV() {
   const [busca, setBusca] = useState("");
   const [carrinho, setCarrinho] = useState<CartItem[]>([]);
@@ -48,7 +46,6 @@ export default function PDV() {
   const [sessaoId, setSessaoId] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const socketRef = useRef<Socket | null>(null);
 
   const qc = useQueryClient();
   const { data: produtos = [] } = useListProdutos();
@@ -118,33 +115,20 @@ export default function PDV() {
       setSessaoId(s.sessaoId);
       setQrUrl(s.qrUrl);
       setQrOpen(true);
-    } catch (e) {
+    } catch {
       toast.error("Não foi possível abrir a sessão de pareamento");
     }
   }
 
-  useEffect(() => {
-    if (!sessaoId) return;
-    const sock = io({ path: "/socket.io", transports: ["websocket", "polling"] });
-    socketRef.current = sock;
-    sock.on("connect", () => {
-      sock.emit("join_pdv", sessaoId);
-    });
-    sock.on("carrinho:add", (data: { produto: Produto }) => {
-      if (data?.produto) {
-        adicionarProduto(data.produto);
-        toast.success(`${data.produto.nome} (via celular)`);
-      }
-    });
-    sock.on("produto:novo", (data: { produto: Produto }) => {
-      if (data?.produto) {
-        toast(`Produto cadastrado: ${data.produto.nome}`);
-      }
-    });
-    return () => {
-      sock.disconnect();
-    };
-  }, [sessaoId]);
+  useScannerSocket(sessaoId, {
+    onAdd: (produto) => {
+      adicionarProduto(produto);
+      toast.success(`${produto.nome} (via celular)`);
+    },
+    onNovo: (produto) => {
+      toast(`Produto cadastrado: ${produto.nome}`);
+    },
+  });
 
   async function finalizarVenda() {
     if (carrinho.length === 0) return;
@@ -209,7 +193,7 @@ export default function PDV() {
                   <div className="flex-1">
                     <div className="font-medium">{i.produto.nome}</div>
                     <div className="text-sm text-muted-foreground">
-                      {fmt(i.produto.preco)} cada
+                      {formatBRL(i.produto.preco)} cada
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -232,7 +216,7 @@ export default function PDV() {
                     </Button>
                   </div>
                   <div className="w-24 text-right font-semibold">
-                    {fmt(i.produto.preco * i.qty)}
+                    {formatBRL(i.produto.preco * i.qty)}
                   </div>
                   <Button
                     size="icon"
@@ -260,7 +244,7 @@ export default function PDV() {
           </div>
           <div className="flex justify-between text-2xl font-bold">
             <span>Total</span>
-            <span>{fmt(total)}</span>
+            <span>{formatBRL(total)}</span>
           </div>
           <Button
             size="lg"
@@ -300,7 +284,7 @@ export default function PDV() {
       <Dialog open={finalizarOpen} onOpenChange={setFinalizarOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Finalizar venda — {fmt(total)}</DialogTitle>
+            <DialogTitle>Finalizar venda — {formatBRL(total)}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2">
             <div className="grid gap-2">

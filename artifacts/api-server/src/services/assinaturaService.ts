@@ -1,7 +1,8 @@
-import { db, planos, assinaturas, empresas, sistemaConfig, stripeEventos } from "@workspace/db";
+import { db, planos, assinaturas, empresas, sistemaConfig } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { stripe } from "../lib/stripe";
-import { logger } from "../lib/logger";
+
+export { processarWebhook } from "./stripeWebhookService";
 
 export async function getSistemaConfig() {
   const [cfg] = await db.select().from(sistemaConfig).limit(1);
@@ -114,122 +115,6 @@ export async function criarCheckout(
 
 export async function criarPortal(_empresaId: number, _origin: string): Promise<{ url: string }> {
   throw new Error("PORTAL_INDISPONIVEL_PAGAMENTO_UNICO");
-}
-
-export async function processarWebhook(event: { id?: string; type: string; data: { object: Record<string, unknown> } }) {
-  logger.info({ type: event.type, id: event.id }, "stripe webhook recebido");
-
-  if (event.id) {
-    try {
-      await db.insert(stripeEventos).values({ eventId: event.id, tipo: event.type });
-    } catch (err) {
-      logger.info({ eventId: event.id, type: event.type }, "evento stripe ja processado, ignorando duplicado");
-      return;
-    }
-  }
-
-  if (event.type === "checkout.session.completed") {
-    const sess = event.data.object as Record<string, unknown>;
-    const meta = (sess["metadata"] ?? {}) as Record<string, string>;
-    const empresaId = Number(meta["empresaId"]);
-    const planoId = Number(meta["planoId"]);
-    const paymentIntentId = sess["payment_intent"] as string | undefined;
-    const paymentStatus = sess["payment_status"] as string | undefined;
-    if (empresaId && planoId) {
-      const novoStatus = paymentStatus === "paid" ? "ativa" : "pendente";
-      await upsertAssinatura(empresaId, planoId, paymentIntentId, novoStatus);
-      if (novoStatus === "ativa") {
-        await db
-          .update(empresas)
-          .set({ bloqueada: false, ativa: true })
-          .where(eq(empresas.id, empresaId));
-      }
-    }
-  }
-
-  if (event.type === "payment_intent.succeeded") {
-    const pi = event.data.object as Record<string, unknown>;
-    const meta = (pi["metadata"] ?? {}) as Record<string, string>;
-    const empresaId = Number(meta["empresaId"]);
-    const planoId = Number(meta["planoId"]);
-    const paymentIntentId = pi["id"] as string | undefined;
-    if (empresaId && planoId) {
-      await upsertAssinatura(empresaId, planoId, paymentIntentId, "ativa");
-      await db
-        .update(empresas)
-        .set({ bloqueada: false, ativa: true })
-        .where(eq(empresas.id, empresaId));
-    }
-  }
-
-  if (event.type === "payment_intent.payment_failed" || event.type === "checkout.session.expired") {
-    const obj = event.data.object as Record<string, unknown>;
-    const meta = (obj["metadata"] ?? {}) as Record<string, string>;
-    const empresaId = Number(meta["empresaId"]);
-    if (empresaId) {
-      const [exist] = await db
-        .select()
-        .from(assinaturas)
-        .where(eq(assinaturas.empresaId, empresaId))
-        .limit(1);
-      if (exist && exist.status !== "ativa") {
-        await db
-          .update(assinaturas)
-          .set({ status: "falha_pagamento" })
-          .where(eq(assinaturas.id, exist.id));
-      }
-    }
-  }
-
-  if (event.type === "charge.refunded") {
-    const ch = event.data.object as Record<string, unknown>;
-    const paymentIntentId = ch["payment_intent"] as string | undefined;
-    if (paymentIntentId) {
-      await db
-        .update(assinaturas)
-        .set({ status: "reembolsada", canceladaEm: new Date() })
-        .where(eq(assinaturas.stripeSubscriptionId, paymentIntentId));
-      const [a] = await db
-        .select()
-        .from(assinaturas)
-        .where(eq(assinaturas.stripeSubscriptionId, paymentIntentId))
-        .limit(1);
-      if (a) {
-        await db
-          .update(empresas)
-          .set({ bloqueada: true })
-          .where(eq(empresas.id, a.empresaId));
-      }
-    }
-  }
-}
-
-async function upsertAssinatura(
-  empresaId: number,
-  planoId: number,
-  paymentIntentId: string | undefined,
-  status: string,
-) {
-  const [exist] = await db.select().from(assinaturas).where(eq(assinaturas.empresaId, empresaId)).limit(1);
-  if (exist) {
-    await db
-      .update(assinaturas)
-      .set({
-        planoId,
-        status,
-        stripeSubscriptionId: paymentIntentId ?? exist.stripeSubscriptionId,
-        inicio: status === "ativa" && !exist.inicio ? new Date() : exist.inicio,
-      })
-      .where(eq(assinaturas.id, exist.id));
-  } else {
-    await db.insert(assinaturas).values({
-      empresaId,
-      planoId,
-      status,
-      stripeSubscriptionId: paymentIntentId,
-      inicio: new Date(),
-    });
-  }
 }
 
 export async function adminResumo() {

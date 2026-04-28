@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import express from "express";
 import { stripe } from "../lib/stripe";
-import { processarWebhook } from "../services/assinaturaService";
+import { processarWebhook } from "../services/stripeWebhookService";
 import { logger } from "../lib/logger";
 
 const router = Router();

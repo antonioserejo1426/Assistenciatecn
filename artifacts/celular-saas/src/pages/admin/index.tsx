@@ -44,10 +44,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Lock, Unlock, Sparkles, Building2, AlertTriangle, DollarSign, KeyRound, UserCog, Trash2 } from "lucide-react";
+import { Lock, Unlock, Sparkles, Building2, AlertTriangle, DollarSign, KeyRound, UserCog, Trash2, Database, Download, RefreshCw } from "lucide-react";
+import { formatBRL, formatBytes, formatDateTime } from "@/lib/utils";
+import {
+  listBackups,
+  triggerBackup,
+  deleteBackup as apiDeleteBackup,
+  backupDownloadUrl,
+  type BackupFileDto,
+} from "@/lib/admin-api";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+const fmt = formatBRL;
 
 export default function AdminPage() {
   const qc = useQueryClient();
@@ -199,6 +207,9 @@ export default function AdminPage() {
         <p className="text-sm text-muted-foreground">Gestão de todas as empresas TecnoFix</p>
       </div>
 
+      <BackupsCard />
+
+
       <div className="grid gap-3 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
@@ -293,7 +304,7 @@ export default function AdminPage() {
                   </TableCell>
                   <TableCell>{e.planoNome ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {e.proximoVencimento ? new Date(e.proximoVencimento).toLocaleDateString("pt-BR") : "—"}
+                    {e.proximoVencimento ? formatDateTime(e.proximoVencimento) : "—"}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
@@ -484,5 +495,133 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function BackupsCard() {
+  const { data: backups = [], refetch, isFetching } = useQuery<BackupFileDto[]>({
+    queryKey: ["admin", "backups"],
+    queryFn: listBackups,
+    staleTime: 30_000,
+  });
+
+  const trigger = useMutation({
+    mutationFn: triggerBackup,
+    onSuccess: () => {
+      toast.success("Backup gerado com sucesso");
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err?.message ?? "Falha ao gerar backup");
+    },
+  });
+
+  const remover = useMutation({
+    mutationFn: (filename: string) => apiDeleteBackup(filename),
+    onSuccess: () => {
+      toast.success("Backup removido");
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err?.message ?? "Falha ao remover backup");
+    },
+  });
+
+  function baixar(filename: string) {
+    const token = localStorage.getItem("tecnofix_token");
+    fetch(backupDownloadUrl(filename), {
+      headers: token ? { authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("Falha ao baixar");
+        return r.blob();
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      })
+      .catch((e) => toast.error(e?.message ?? "Erro ao baixar"));
+  }
+
+  function confirmarRemover(filename: string) {
+    if (!confirm(`Excluir o backup "${filename}"? Esta ação não pode ser desfeita.`)) return;
+    remover.mutate(filename);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-4 w-4" /> Backups automáticos do banco
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Backup diário (03:00 UTC), retém os últimos 14. Você também pode gerar manualmente.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`mr-1 h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
+              Atualizar
+            </Button>
+            <Button size="sm" onClick={() => trigger.mutate()} disabled={trigger.isPending}>
+              <Database className="mr-1 h-3 w-3" />
+              {trigger.isPending ? "Gerando..." : "Gerar agora"}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {backups.length === 0 ? (
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            Nenhum backup ainda. Clique em "Gerar agora" para criar o primeiro.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Arquivo</TableHead>
+                <TableHead>Tamanho</TableHead>
+                <TableHead>Criado em</TableHead>
+                <TableHead className="w-[200px]">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {backups.map((b) => (
+                <TableRow key={b.filename}>
+                  <TableCell className="font-mono text-xs">{b.filename}</TableCell>
+                  <TableCell>{formatBytes(b.size)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {formatDateTime(b.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" onClick={() => baixar(b.filename)}>
+                        <Download className="mr-1 h-3 w-3" /> Baixar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => confirmarRemover(b.filename)}
+                        disabled={remover.isPending}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 }

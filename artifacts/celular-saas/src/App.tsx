@@ -24,7 +24,19 @@ import AssinaturaCancelado from "@/pages/assinatura/cancelado";
 import Configuracoes from "@/pages/configuracoes/index";
 import Admin from "@/pages/admin/index";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 function ProtectedRoute({ component: Component, adminOnly = false, publicFallback: PublicFallback, ...rest }: any) {
   const { token, isLoading, user, empresa, assinaturaStatus } = useAuth();

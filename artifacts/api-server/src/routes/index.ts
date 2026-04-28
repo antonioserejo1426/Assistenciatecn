@@ -8,6 +8,7 @@ import tecnicosServicosRouter from "./tecnicosServicos";
 import scannerRouter from "./scanner";
 import assinaturaRouter from "./assinatura";
 import adminRouter from "./admin";
+import backupRouter from "./backup";
 import sistemaRouter from "./sistema";
 
 const router: IRouter = Router();
@@ -22,5 +23,6 @@ router.use(vendasRouter);
 router.use(tecnicosServicosRouter);
 router.use(scannerRouter);
 router.use(adminRouter);
+router.use(backupRouter);
 
 export default router;

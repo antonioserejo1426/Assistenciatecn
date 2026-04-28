@@ -4,6 +4,8 @@ import { logger } from "./lib/logger";
 import { initSocket } from "./lib/socket";
 import { ensureSuperAdmin, ensureSeedPlanos, syncStripePlanos } from "./services/empresaService";
 import { ensurePlanoFeatures } from "./services/featureService";
+import { runBackup } from "./services/backupService";
+import { scheduleDaily } from "./lib/scheduler";
 
 const rawPort = process.env["PORT"];
 
@@ -34,5 +36,11 @@ initSocket(httpServer);
 void bootstrap().then(() => {
   httpServer.listen(port, () => {
     logger.info({ port }, "TecnoFix API + WS listening");
+    scheduleDaily({
+      name: "backup-postgres",
+      hourUtc: 3,
+      minuteUtc: 0,
+      run: () => runBackup(),
+    });
   });
 });
