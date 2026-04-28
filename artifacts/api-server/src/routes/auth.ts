@@ -4,9 +4,26 @@ import { db, usuarios, empresas } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { registerEmpresa, authenticate } from "../services/empresaService";
+import { requestPasswordReset, confirmPasswordReset } from "../services/passwordResetService";
 import { logger } from "../lib/logger";
 
 const router = Router();
+
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "muitas_tentativas", message: "Muitas tentativas. Tente novamente em alguns minutos." },
+});
+
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "muitas_tentativas", message: "Muitas tentativas. Tente novamente em alguns minutos." },
+});
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -138,6 +155,51 @@ router.get("/auth/me", requireAuth, async (req, res) => {
     assinaturaStatus: empresa?.bloqueada ? "bloqueada" : assinaturaStatus,
     features,
   });
+});
+
+router.post("/auth/forgot-password", forgotLimiter, async (req, res) => {
+  try {
+    const { email } = req.body ?? {};
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ error: "email_obrigatorio" });
+    }
+    await requestPasswordReset(email);
+    res.json({
+      ok: true,
+      message:
+        "Se o email estiver cadastrado, você receberá em instantes um link para redefinir a senha.",
+    });
+  } catch (err) {
+    logger.error({ err }, "forgot-password failed");
+    res.json({
+      ok: true,
+      message:
+        "Se o email estiver cadastrado, você receberá em instantes um link para redefinir a senha.",
+    });
+  }
+});
+
+router.post("/auth/reset-password", resetLimiter, async (req, res) => {
+  try {
+    const { token, senha } = req.body ?? {};
+    if (!token || !senha) return res.status(400).json({ error: "campos_obrigatorios" });
+    if (typeof token !== "string" || typeof senha !== "string") {
+      return res.status(400).json({ error: "campos_obrigatorios" });
+    }
+    const result = await confirmPasswordReset(token, senha);
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        token_invalido: "Link inválido. Solicite um novo email de redefinição.",
+        token_expirado: "Link expirado. Solicite um novo email de redefinição.",
+        senha_curta: "A senha precisa ter pelo menos 6 caracteres.",
+      };
+      return res.status(400).json({ error: result.reason, message: messages[result.reason] });
+    }
+    res.json({ ok: true, message: "Senha redefinida com sucesso. Você já pode entrar." });
+  } catch (err) {
+    logger.error({ err }, "reset-password failed");
+    res.status(500).json({ error: "erro_interno" });
+  }
 });
 
 export default router;

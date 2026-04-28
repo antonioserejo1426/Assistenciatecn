@@ -40,6 +40,8 @@ export const usuarios = pgTable(
     senhaHash: text("senha_hash").notNull(),
     role: varchar("role", { length: 32 }).notNull().default("admin"),
     ativo: boolean("ativo").notNull().default(true),
+    senhaResetTokenHash: varchar("senha_reset_token_hash", { length: 200 }),
+    senhaResetExpiraEm: timestamp("senha_reset_expira_em", { withTimezone: true }),
     criadoEm: timestamp("criado_em", { withTimezone: true })
       .notNull()
       .defaultNow(),

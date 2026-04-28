@@ -9,6 +9,8 @@ import { AppLayout } from "@/components/layout";
 const Landing = lazy(() => import("@/pages/landing/index"));
 const Login = lazy(() => import("@/pages/auth/login"));
 const Register = lazy(() => import("@/pages/auth/register"));
+const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
+const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
 const Dashboard = lazy(() => import("@/pages/dashboard/index"));
 const PDV = lazy(() => import("@/pages/pdv/index"));
 const Scan = lazy(() => import("@/pages/scan/index"));
@@ -100,6 +102,8 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/registro" component={Register} />
+      <Route path="/esqueci-senha" component={ForgotPassword} />
+      <Route path="/redefinir-senha" component={ResetPassword} />
       <Route path="/scan/:sessaoId" component={Scan} />
       <Route path="/assinatura/sucesso" component={AssinaturaSucesso} />
       <Route path="/assinatura/cancelado" component={AssinaturaCancelado} />

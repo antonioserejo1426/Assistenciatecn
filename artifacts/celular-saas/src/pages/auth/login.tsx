@@ -163,14 +163,22 @@ export default function Login() {
                   )}
                 />
 
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <Checkbox
-                    checked={rememberMe}
-                    onCheckedChange={(v) => setRememberMe(v === true)}
-                    className="border-white/40 data-[state=checked]:bg-[hsl(28,85%,42%)] data-[state=checked]:border-[hsl(28,85%,42%)]"
-                  />
-                  <span className="text-sm text-white/85">Lembrar meu email</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <Checkbox
+                      checked={rememberMe}
+                      onCheckedChange={(v) => setRememberMe(v === true)}
+                      className="border-white/40 data-[state=checked]:bg-[hsl(28,85%,42%)] data-[state=checked]:border-[hsl(28,85%,42%)]"
+                    />
+                    <span className="text-sm text-white/85">Lembrar meu email</span>
+                  </label>
+                  <Link
+                    href="/esqueci-senha"
+                    className="text-sm font-medium text-[hsl(28,85%,55%)] hover:underline underline-offset-4"
+                  >
+                    Esqueci a senha
+                  </Link>
+                </div>
 
                 <Button
                   type="submit"
