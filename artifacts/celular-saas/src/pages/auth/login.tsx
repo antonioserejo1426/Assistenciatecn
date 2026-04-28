@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,10 +7,11 @@ import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { messageFromError } from "@/lib/api-error";
-import { Crown, Sparkles, ShieldCheck, Zap, BarChart3 } from "lucide-react";
+import { Crown, Sparkles, ShieldCheck, Zap, BarChart3, X } from "lucide-react";
 import heroImage from "@assets/9FE3B637-3BED-471F-98A6-8CD90C1D69E5_1777058540929.jpeg";
 
 const loginSchema = z.object({
@@ -17,15 +19,28 @@ const loginSchema = z.object({
   senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
+const REMEMBERED_EMAIL_KEY = "tecnofix_remembered_email";
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { setToken } = useAuth();
   const loginMutation = useLogin();
 
+  const rememberedEmail =
+    typeof window !== "undefined" ? localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? "" : "";
+
+  const [rememberMe, setRememberMe] = useState<boolean>(Boolean(rememberedEmail));
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", senha: "" },
+    defaultValues: { email: rememberedEmail, senha: "" },
   });
+
+  useEffect(() => {
+    if (rememberedEmail) {
+      setTimeout(() => form.setFocus("senha"), 50);
+    }
+  }, []);
 
   const onSubmit = (values: z.infer<typeof loginSchema>) => {
     loginMutation.mutate(
@@ -33,6 +48,11 @@ export default function Login() {
       {
         onSuccess: (data) => {
           setToken(data.token);
+          if (rememberMe) {
+            localStorage.setItem(REMEMBERED_EMAIL_KEY, values.email);
+          } else {
+            localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+          }
           toast.success("Bem-vindo de volta! Acesso liberado.");
           setLocation("/");
         },
@@ -42,6 +62,13 @@ export default function Login() {
       },
     );
   };
+
+  function trocarUsuario() {
+    localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+    form.reset({ email: "", senha: "" });
+    setRememberMe(false);
+    setTimeout(() => form.setFocus("email"), 50);
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -94,11 +121,22 @@ export default function Login() {
                       <FormControl>
                         <Input
                           placeholder="seu@email.com"
+                          autoComplete="username"
                           className="h-12 rounded-xl border-input/80 bg-card/60 px-4 text-base focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
                           {...field}
                         />
                       </FormControl>
                       <FormMessage />
+                      {rememberedEmail && field.value === rememberedEmail && (
+                        <button
+                          type="button"
+                          onClick={trocarUsuario}
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-white/70 hover:text-white transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                          Não é você? Trocar de conta
+                        </button>
+                      )}
                     </FormItem>
                   )}
                 />
@@ -115,6 +153,7 @@ export default function Login() {
                         <Input
                           type="password"
                           placeholder="••••••••"
+                          autoComplete="current-password"
                           className="h-12 rounded-xl border-input/80 bg-card/60 px-4 text-base focus-visible:ring-2 focus-visible:ring-[hsl(38,92%,55%)]"
                           {...field}
                         />
@@ -123,6 +162,15 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
+
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <Checkbox
+                    checked={rememberMe}
+                    onCheckedChange={(v) => setRememberMe(v === true)}
+                    className="border-white/40 data-[state=checked]:bg-[hsl(28,85%,42%)] data-[state=checked]:border-[hsl(28,85%,42%)]"
+                  />
+                  <span className="text-sm text-white/85">Lembrar meu email</span>
+                </label>
 
                 <Button
                   type="submit"
