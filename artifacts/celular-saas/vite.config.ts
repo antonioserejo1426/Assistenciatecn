@@ -57,6 +57,26 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    target: "es2020",
+    sourcemap: false,
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
+    minify: "esbuild",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("@radix-ui") || id.includes("lucide-react")) return "ui-vendor";
+          if (id.includes("recharts") || id.includes("/d3-")) return "chart-vendor";
+          if (id.includes("socket.io-client") || id.includes("engine.io")) return "socket-vendor";
+          return "vendor";
+        },
+      },
+    },
+  },
+  esbuild: {
+    drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
+    legalComments: "none",
   },
   server: {
     port,

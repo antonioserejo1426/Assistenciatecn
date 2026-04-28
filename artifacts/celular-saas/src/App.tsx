@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -5,24 +6,23 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/layout";
 
-// Pages
-import NotFound from "@/pages/not-found";
-import Landing from "@/pages/landing/index";
-import Login from "@/pages/auth/login";
-import Register from "@/pages/auth/register";
-import Dashboard from "@/pages/dashboard/index";
-import PDV from "@/pages/pdv/index";
-import Scan from "@/pages/scan/index";
-import Produtos from "@/pages/produtos/index";
-import Estoque from "@/pages/estoque/index";
-import Vendas from "@/pages/vendas/index";
-import Servicos from "@/pages/servicos/index";
-import Tecnicos from "@/pages/tecnicos/index";
-import Assinatura from "@/pages/assinatura/index";
-import AssinaturaSucesso from "@/pages/assinatura/sucesso";
-import AssinaturaCancelado from "@/pages/assinatura/cancelado";
-import Configuracoes from "@/pages/configuracoes/index";
-import Admin from "@/pages/admin/index";
+const Landing = lazy(() => import("@/pages/landing/index"));
+const Login = lazy(() => import("@/pages/auth/login"));
+const Register = lazy(() => import("@/pages/auth/register"));
+const Dashboard = lazy(() => import("@/pages/dashboard/index"));
+const PDV = lazy(() => import("@/pages/pdv/index"));
+const Scan = lazy(() => import("@/pages/scan/index"));
+const Produtos = lazy(() => import("@/pages/produtos/index"));
+const Estoque = lazy(() => import("@/pages/estoque/index"));
+const Vendas = lazy(() => import("@/pages/vendas/index"));
+const Servicos = lazy(() => import("@/pages/servicos/index"));
+const Tecnicos = lazy(() => import("@/pages/tecnicos/index"));
+const Assinatura = lazy(() => import("@/pages/assinatura/index"));
+const AssinaturaSucesso = lazy(() => import("@/pages/assinatura/sucesso"));
+const AssinaturaCancelado = lazy(() => import("@/pages/assinatura/cancelado"));
+const Configuracoes = lazy(() => import("@/pages/configuracoes/index"));
+const Admin = lazy(() => import("@/pages/admin/index"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +37,14 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function PageFallback() {
+  return (
+    <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
+      Carregando...
+    </div>
+  );
+}
 
 function ProtectedRoute({ component: Component, adminOnly = false, publicFallback: PublicFallback, ...rest }: any) {
   const { token, isLoading, user, empresa, assinaturaStatus } = useAuth();
@@ -118,7 +126,9 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <Router />
+            <Suspense fallback={<PageFallback />}>
+              <Router />
+            </Suspense>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

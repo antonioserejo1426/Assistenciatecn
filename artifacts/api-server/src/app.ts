@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import webhookRouter from "./routes/webhook";
@@ -10,11 +11,22 @@ const app: Express = express();
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
+app.set("etag", "strong");
 
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+  }),
+);
+
+app.use(
+  compression({
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers["x-no-compression"]) return false;
+      return compression.filter(req, res);
+    },
   }),
 );
 
@@ -38,6 +50,10 @@ app.use(
   }),
 );
 app.use(cors());
+
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", uptime: process.uptime() });
+});
 
 app.use("/api", webhookRouter);
 
