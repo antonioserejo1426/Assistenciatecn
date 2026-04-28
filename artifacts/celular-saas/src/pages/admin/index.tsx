@@ -80,7 +80,12 @@ export default function AdminPage() {
   const updatePlano = useAdminUpdatePlano();
   const { data: usuariosEmpresa = [], isFetching: loadingUsuarios } = useAdminListUsuariosEmpresa(
     usuariosDialog?.id ?? 0,
-    { query: { enabled: !!usuariosDialog } },
+    {
+      query: {
+        queryKey: getAdminListUsuariosEmpresaQueryKey(usuariosDialog?.id ?? 0),
+        enabled: !!usuariosDialog,
+      },
+    },
   );
 
   const [editPlano, setEditPlano] = useState<any | null>(null);
@@ -214,7 +219,7 @@ export default function AdminPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Building2 className="h-3 w-3" /> Empresas</div>
-            <div className="text-2xl font-bold">{resumo?.totalEmpresas ?? 0}</div>
+            <div className="text-2xl font-bold">{resumo?.empresas ?? 0}</div>
           </CardContent>
         </Card>
         <Card>

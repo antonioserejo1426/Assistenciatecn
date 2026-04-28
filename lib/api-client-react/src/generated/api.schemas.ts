@@ -325,6 +325,12 @@ export interface EstenderTrialBody {
 
 export interface AtivarAssinaturaBody {
   planoId: number;
+  /**
+   * Dias de validade da assinatura (default 30)
+   * @minimum 1
+   * @maximum 3650
+   */
+  dias?: number;
 }
 
 export interface AdminResumo {

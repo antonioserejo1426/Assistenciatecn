@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   useListVendas,
   useGetVenda,
+  getGetVendaQueryKey,
   type Venda,
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +27,9 @@ const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 function VendaDetalhe({ id, onClose }: { id: number | null; onClose: () => void }) {
-  const { data } = useGetVenda(id ?? 0, { query: { enabled: !!id } });
+  const { data } = useGetVenda(id ?? 0, {
+    query: { queryKey: getGetVendaQueryKey(id ?? 0), enabled: !!id },
+  });
   return (
     <Dialog open={!!id} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
@@ -63,9 +66,9 @@ function VendaDetalhe({ id, onClose }: { id: number | null; onClose: () => void 
                   <TableRow key={i.id}>
                     <TableCell>{i.produtoNome}</TableCell>
                     <TableCell className="text-right">{i.quantidade}</TableCell>
-                    <TableCell className="text-right">{fmt(i.precoUnitario)}</TableCell>
+                    <TableCell className="text-right">{fmt(i.precoUnitario ?? 0)}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {fmt(i.precoUnitario * i.quantidade)}
+                      {fmt((i.precoUnitario ?? 0) * i.quantidade)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -78,11 +81,11 @@ function VendaDetalhe({ id, onClose }: { id: number | null; onClose: () => void 
               </div>
               <div>
                 <p className="text-muted-foreground">Custo</p>
-                <p className="text-lg">{fmt(data.custo)}</p>
+                <p className="text-lg">{fmt(data.custo ?? 0)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Lucro</p>
-                <p className="text-lg font-bold text-green-600">{fmt(data.lucro)}</p>
+                <p className="text-lg font-bold text-green-600">{fmt(data.lucro ?? 0)}</p>
               </div>
             </div>
           </div>
@@ -156,7 +159,7 @@ export default function VendasPage() {
                     </TableCell>
                     <TableCell className="text-right">{v.itensCount}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(v.total)}</TableCell>
-                    <TableCell className="text-right text-green-600">{fmt(v.lucro)}</TableCell>
+                    <TableCell className="text-right text-green-600">{fmt(v.lucro ?? 0)}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(v.criadoEm).toLocaleString("pt-BR")}
                     </TableCell>

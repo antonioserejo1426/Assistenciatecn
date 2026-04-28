@@ -4,7 +4,7 @@ import { logger } from "./logger";
 const key = process.env["STRIPE_SECRET_KEY"];
 
 export const stripe = key
-  ? new Stripe(key, { apiVersion: "2025-09-30.clover" })
+  ? new Stripe(key, { apiVersion: "2026-03-25.dahlia" })
   : null;
 
 export const stripeEnabled = stripe !== null;

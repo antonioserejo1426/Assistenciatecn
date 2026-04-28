@@ -85,8 +85,9 @@ export default function ScanPage() {
 
   async function processarCodigo(codigo: string) {
     try {
-      const p = await getProdutoByCodigo(codigo);
-      if (p) {
+      const lookup = await getProdutoByCodigo(codigo);
+      if (lookup.encontrado && lookup.produto) {
+        const p = lookup.produto;
         socketRef.current?.emit("scanner:add", { sessaoId, produto: p });
         setHistorico((h) => [p, ...h].slice(0, 8));
         toast.success(`${p.nome} enviado`);

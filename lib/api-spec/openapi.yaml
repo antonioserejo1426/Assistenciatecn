@@ -1075,6 +1075,11 @@ components:
       required: [planoId]
       properties:
         planoId: { type: integer }
+        dias:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          description: "Dias de validade da assinatura (default 30)"
     AdminResumo:
       type: object
       required: [empresas, ativas, trial, vencidas, mrr]

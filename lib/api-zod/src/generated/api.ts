@@ -613,8 +613,16 @@ export const AdminAtivarAssinaturaParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const adminAtivarAssinaturaBodyDiasMax = 3650;
+
 export const AdminAtivarAssinaturaBody = zod.object({
   planoId: zod.number(),
+  dias: zod
+    .number()
+    .min(1)
+    .max(adminAtivarAssinaturaBodyDiasMax)
+    .optional()
+    .describe("Dias de validade da assinatura (default 30)"),
 });
 
 export const AdminAtivarAssinaturaResponse = zod.object({

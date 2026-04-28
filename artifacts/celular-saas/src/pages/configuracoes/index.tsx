@@ -22,7 +22,7 @@ export default function ConfiguracoesPage() {
   const isSuperAdmin = user?.role === "super_admin";
 
   const { data: empresa, isLoading } = useGetEmpresa({
-    query: { enabled: !isSuperAdmin, retry: false },
+    query: { queryKey: getGetEmpresaQueryKey(), enabled: !isSuperAdmin, retry: false },
   });
   const atualizar = useUpdateEmpresa();
 

@@ -96,10 +96,10 @@ export default function PDV() {
       return;
     }
     try {
-      const p = await getProdutoByCodigo(term);
-      if (p) {
-        adicionarProduto(p);
-        toast.success(`${p.nome} adicionado`);
+      const lookup = await getProdutoByCodigo(term);
+      if (lookup.encontrado && lookup.produto) {
+        adicionarProduto(lookup.produto);
+        toast.success(`${lookup.produto.nome} adicionado`);
         setBusca("");
       } else {
         toast.error("Produto não encontrado");
